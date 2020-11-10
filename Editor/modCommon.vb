@@ -9,7 +9,8 @@ Module modCommon
     Public Structure gTypFileInfo
         Dim strFilePath As String
         Dim strFileName As String
-
+        Dim strFilePath2 As String
+        Dim strFileName2 As String
         'T,Ueki フォルダ仕様管理変更
         Dim strFileNameNew As String
 
