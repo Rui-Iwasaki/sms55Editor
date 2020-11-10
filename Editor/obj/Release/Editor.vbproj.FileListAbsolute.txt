@@ -31376,3 +31376,9 @@ C:\Users\SDT(IAS)-NOTE003\Desktop\Editor(Ver.2.0.9.9)-1\Editor\obj\Release\Edito
 C:\Users\SDT(IAS)-NOTE003\Desktop\Editor(Ver.2.0.9.9)-1\Editor\obj\Release\Editor.frmChSioBinaryext.resources
 C:\Users\SDT(IAS)-NOTE003\Desktop\Editor(Ver.2.0.9.9)-1\Editor\obj\Release\Editor.frmChExtLanList.resources
 C:\Users\SDT(IAS)-NOTE003\Desktop\Editor(Ver.2.0.9.9)-1\Editor\obj\Release\Editor.vbproj.GenerateResource.Cache
+C:\Users\SDT(IAS)-NOTE003\Desktop\PacOcean向けエディター\Editor(Ver.2.0.9.A)\Editor\bin\Release\Editor.exe.config
+C:\Users\SDT(IAS)-NOTE003\Desktop\PacOcean向けエディター\Editor(Ver.2.0.9.A)\Editor\obj\Release\Interop.Scripting.dll
+C:\Users\SDT(IAS)-NOTE003\Desktop\PacOcean向けエディター\Editor(Ver.2.0.9.A)\Editor\obj\Release\Editor.vbproj.ResolveComReference.cache
+C:\Users\SDT(IAS)-NOTE003\Desktop\PacOcean向けエディター\Editor(Ver.2.0.9.A)\Editor\obj\Release\Editor.exe
+C:\Users\SDT(IAS)-NOTE003\Desktop\PacOcean向けエディター\Editor(Ver.2.0.9.A)\Editor\obj\Release\Editor.xml
+C:\Users\SDT(IAS)-NOTE003\Desktop\PacOcean向けエディター\Editor(Ver.2.0.9.A)\Editor\obj\Release\Editor.pdb

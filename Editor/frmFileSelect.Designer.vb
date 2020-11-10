@@ -23,6 +23,7 @@ Partial Class frmFileSelect
     <System.Diagnostics.DebuggerStepThrough()> _
     Private Sub InitializeComponent()
         Me.GroupBox1 = New System.Windows.Forms.GroupBox()
+        Me.chkHoan = New System.Windows.Forms.CheckBox()
         Me.chkExcel = New System.Windows.Forms.CheckBox()
         Me.txtFileNameNew = New System.Windows.Forms.TextBox()
         Me.lblVersionUP = New System.Windows.Forms.Label()
@@ -38,10 +39,26 @@ Partial Class frmFileSelect
         Me.cmdOK = New System.Windows.Forms.Button()
         Me.cmdCancel = New System.Windows.Forms.Button()
         Me.fdgFolder = New System.Windows.Forms.FolderBrowserDialog()
-        Me.chkHoan = New System.Windows.Forms.CheckBox()
+        Me.GroupBox2 = New System.Windows.Forms.GroupBox()
+        Me.chkHoan2 = New System.Windows.Forms.CheckBox()
+        Me.chkExcel2 = New System.Windows.Forms.CheckBox()
+        Me.txtFileNameNew2 = New System.Windows.Forms.TextBox()
+        Me.lblVersionUP2 = New System.Windows.Forms.Label()
+        Me.chkVersionUP2 = New System.Windows.Forms.CheckBox()
+        Me.chkCompile2 = New System.Windows.Forms.CheckBox()
+        Me.numVersionUP2 = New System.Windows.Forms.NumericUpDown()
+        Me.NumericUpDown2 = New System.Windows.Forms.NumericUpDown()
+        Me.txtFileName2 = New System.Windows.Forms.TextBox()
+        Me.Label4 = New System.Windows.Forms.Label()
+        Me.cmdRef2 = New System.Windows.Forms.Button()
+        Me.txtFilePath2 = New System.Windows.Forms.TextBox()
+        Me.Label5 = New System.Windows.Forms.Label()
         Me.GroupBox1.SuspendLayout()
         CType(Me.numVersionUP, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.numVersion, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.GroupBox2.SuspendLayout()
+        CType(Me.numVersionUP2, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.NumericUpDown2, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'GroupBox1
@@ -65,6 +82,16 @@ Partial Class frmFileSelect
         Me.GroupBox1.TabIndex = 0
         Me.GroupBox1.TabStop = False
         Me.GroupBox1.Text = "File"
+        '
+        'chkHoan
+        '
+        Me.chkHoan.AutoSize = True
+        Me.chkHoan.Location = New System.Drawing.Point(398, 105)
+        Me.chkHoan.Name = "chkHoan"
+        Me.chkHoan.Size = New System.Drawing.Size(138, 16)
+        Me.chkHoan.TabIndex = 13
+        Me.chkHoan.Text = "Japanese menu(Hoan)"
+        Me.chkHoan.UseVisualStyleBackColor = True
         '
         'chkExcel
         '
@@ -196,7 +223,7 @@ Partial Class frmFileSelect
         Me.cmdOK.BackColor = System.Drawing.SystemColors.Control
         Me.cmdOK.Cursor = System.Windows.Forms.Cursors.Default
         Me.cmdOK.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.cmdOK.Location = New System.Drawing.Point(443, 154)
+        Me.cmdOK.Location = New System.Drawing.Point(443, 325)
         Me.cmdOK.Name = "cmdOK"
         Me.cmdOK.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.cmdOK.Size = New System.Drawing.Size(105, 27)
@@ -210,7 +237,7 @@ Partial Class frmFileSelect
         Me.cmdCancel.Cursor = System.Windows.Forms.Cursors.Default
         Me.cmdCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel
         Me.cmdCancel.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.cmdCancel.Location = New System.Drawing.Point(554, 154)
+        Me.cmdCancel.Location = New System.Drawing.Point(554, 325)
         Me.cmdCancel.Name = "cmdCancel"
         Me.cmdCancel.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.cmdCancel.Size = New System.Drawing.Size(97, 27)
@@ -218,22 +245,171 @@ Partial Class frmFileSelect
         Me.cmdCancel.Text = "Cancel"
         Me.cmdCancel.UseVisualStyleBackColor = True
         '
-        'chkHoan
+        'GroupBox2
         '
-        Me.chkHoan.AutoSize = True
-        Me.chkHoan.Location = New System.Drawing.Point(398, 105)
-        Me.chkHoan.Name = "chkHoan"
-        Me.chkHoan.Size = New System.Drawing.Size(138, 16)
-        Me.chkHoan.TabIndex = 13
-        Me.chkHoan.Text = "Japanese menu(Hoan)"
-        Me.chkHoan.UseVisualStyleBackColor = True
+        Me.GroupBox2.Controls.Add(Me.chkHoan2)
+        Me.GroupBox2.Controls.Add(Me.chkExcel2)
+        Me.GroupBox2.Controls.Add(Me.txtFileNameNew2)
+        Me.GroupBox2.Controls.Add(Me.lblVersionUP2)
+        Me.GroupBox2.Controls.Add(Me.chkVersionUP2)
+        Me.GroupBox2.Controls.Add(Me.chkCompile2)
+        Me.GroupBox2.Controls.Add(Me.numVersionUP2)
+        Me.GroupBox2.Controls.Add(Me.NumericUpDown2)
+        Me.GroupBox2.Controls.Add(Me.txtFileName2)
+        Me.GroupBox2.Controls.Add(Me.Label4)
+        Me.GroupBox2.Controls.Add(Me.cmdRef2)
+        Me.GroupBox2.Controls.Add(Me.txtFilePath2)
+        Me.GroupBox2.Controls.Add(Me.Label5)
+        Me.GroupBox2.Location = New System.Drawing.Point(12, 169)
+        Me.GroupBox2.Name = "GroupBox2"
+        Me.GroupBox2.Size = New System.Drawing.Size(638, 130)
+        Me.GroupBox2.TabIndex = 6
+        Me.GroupBox2.TabStop = False
+        Me.GroupBox2.Text = "File"
+        '
+        'chkHoan2
+        '
+        Me.chkHoan2.AutoSize = True
+        Me.chkHoan2.Location = New System.Drawing.Point(398, 105)
+        Me.chkHoan2.Name = "chkHoan2"
+        Me.chkHoan2.Size = New System.Drawing.Size(138, 16)
+        Me.chkHoan2.TabIndex = 13
+        Me.chkHoan2.Text = "Japanese menu(Hoan)"
+        Me.chkHoan2.UseVisualStyleBackColor = True
+        Me.chkHoan2.Visible = False
+        '
+        'chkExcel2
+        '
+        Me.chkExcel2.AutoSize = True
+        Me.chkExcel2.Checked = True
+        Me.chkExcel2.CheckState = System.Windows.Forms.CheckState.Checked
+        Me.chkExcel2.Location = New System.Drawing.Point(548, 105)
+        Me.chkExcel2.Name = "chkExcel2"
+        Me.chkExcel2.Size = New System.Drawing.Size(72, 16)
+        Me.chkExcel2.TabIndex = 12
+        Me.chkExcel2.Text = "Excel IN"
+        Me.chkExcel2.UseVisualStyleBackColor = True
+        '
+        'txtFileNameNew2
+        '
+        Me.txtFileNameNew2.Location = New System.Drawing.Point(226, 51)
+        Me.txtFileNameNew2.MaxLength = 8
+        Me.txtFileNameNew2.Name = "txtFileNameNew2"
+        Me.txtFileNameNew2.Size = New System.Drawing.Size(93, 19)
+        Me.txtFileNameNew2.TabIndex = 11
+        Me.txtFileNameNew2.Visible = False
+        '
+        'lblVersionUP2
+        '
+        Me.lblVersionUP2.AutoSize = True
+        Me.lblVersionUP2.Location = New System.Drawing.Point(203, 54)
+        Me.lblVersionUP2.Name = "lblVersionUP2"
+        Me.lblVersionUP2.Size = New System.Drawing.Size(17, 12)
+        Me.lblVersionUP2.TabIndex = 10
+        Me.lblVersionUP2.Text = "->"
+        Me.lblVersionUP2.Visible = False
+        '
+        'chkVersionUP2
+        '
+        Me.chkVersionUP2.AutoSize = True
+        Me.chkVersionUP2.Location = New System.Drawing.Point(104, 79)
+        Me.chkVersionUP2.Name = "chkVersionUP2"
+        Me.chkVersionUP2.Size = New System.Drawing.Size(84, 16)
+        Me.chkVersionUP2.TabIndex = 9
+        Me.chkVersionUP2.Text = "Version UP"
+        Me.chkVersionUP2.UseVisualStyleBackColor = True
+        '
+        'chkCompile2
+        '
+        Me.chkCompile2.AutoSize = True
+        Me.chkCompile2.Location = New System.Drawing.Point(104, 101)
+        Me.chkCompile2.Name = "chkCompile2"
+        Me.chkCompile2.Size = New System.Drawing.Size(126, 16)
+        Me.chkCompile2.TabIndex = 9
+        Me.chkCompile2.Text = "Read Compile File"
+        Me.chkCompile2.UseVisualStyleBackColor = True
+        '
+        'numVersionUP2
+        '
+        Me.numVersionUP2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.75!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.numVersionUP2.ImeMode = System.Windows.Forms.ImeMode.Disable
+        Me.numVersionUP2.Location = New System.Drawing.Point(564, 79)
+        Me.numVersionUP2.Maximum = New Decimal(New Integer() {999, 0, 0, 0})
+        Me.numVersionUP2.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.numVersionUP2.Name = "numVersionUP2"
+        Me.numVersionUP2.Size = New System.Drawing.Size(61, 20)
+        Me.numVersionUP2.TabIndex = 8
+        Me.numVersionUP2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
+        Me.numVersionUP2.ThousandsSeparator = True
+        Me.numVersionUP2.Value = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.numVersionUP2.Visible = False
+        '
+        'NumericUpDown2
+        '
+        Me.NumericUpDown2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.75!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.NumericUpDown2.ImeMode = System.Windows.Forms.ImeMode.Disable
+        Me.NumericUpDown2.Location = New System.Drawing.Point(564, 105)
+        Me.NumericUpDown2.Maximum = New Decimal(New Integer() {999, 0, 0, 0})
+        Me.NumericUpDown2.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.NumericUpDown2.Name = "NumericUpDown2"
+        Me.NumericUpDown2.Size = New System.Drawing.Size(61, 20)
+        Me.NumericUpDown2.TabIndex = 8
+        Me.NumericUpDown2.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
+        Me.NumericUpDown2.ThousandsSeparator = True
+        Me.NumericUpDown2.Value = New Decimal(New Integer() {1, 0, 0, 0})
+        Me.NumericUpDown2.Visible = False
+        '
+        'txtFileName2
+        '
+        Me.txtFileName2.Location = New System.Drawing.Point(104, 51)
+        Me.txtFileName2.MaxLength = 8
+        Me.txtFileName2.Name = "txtFileName2"
+        Me.txtFileName2.Size = New System.Drawing.Size(93, 19)
+        Me.txtFileName2.TabIndex = 4
+        '
+        'Label4
+        '
+        Me.Label4.AutoSize = True
+        Me.Label4.Location = New System.Drawing.Point(20, 54)
+        Me.Label4.Name = "Label4"
+        Me.Label4.Size = New System.Drawing.Size(59, 12)
+        Me.Label4.TabIndex = 3
+        Me.Label4.Text = "File Name"
+        '
+        'cmdRef2
+        '
+        Me.cmdRef2.Font = New System.Drawing.Font("ＭＳ ゴシック", 6.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
+        Me.cmdRef2.Location = New System.Drawing.Point(599, 24)
+        Me.cmdRef2.Name = "cmdRef2"
+        Me.cmdRef2.Size = New System.Drawing.Size(26, 22)
+        Me.cmdRef2.TabIndex = 2
+        Me.cmdRef2.Text = "..."
+        Me.cmdRef2.TextAlign = System.Drawing.ContentAlignment.BottomCenter
+        Me.cmdRef2.UseVisualStyleBackColor = True
+        '
+        'txtFilePath2
+        '
+        Me.txtFilePath2.Location = New System.Drawing.Point(104, 26)
+        Me.txtFilePath2.Name = "txtFilePath2"
+        Me.txtFilePath2.Size = New System.Drawing.Size(489, 19)
+        Me.txtFilePath2.TabIndex = 1
+        '
+        'Label5
+        '
+        Me.Label5.AutoSize = True
+        Me.Label5.Location = New System.Drawing.Point(19, 29)
+        Me.Label5.Name = "Label5"
+        Me.Label5.Size = New System.Drawing.Size(77, 12)
+        Me.Label5.TabIndex = 0
+        Me.Label5.Text = "Saving Place"
         '
         'frmFileSelect
         '
         Me.AcceptButton = Me.cmdOK
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None
         Me.CancelButton = Me.cmdCancel
-        Me.ClientSize = New System.Drawing.Size(662, 195)
+        Me.ClientSize = New System.Drawing.Size(708, 421)
+        Me.Controls.Add(Me.GroupBox2)
         Me.Controls.Add(Me.cmdOK)
         Me.Controls.Add(Me.cmdCancel)
         Me.Controls.Add(Me.GroupBox1)
@@ -248,6 +424,10 @@ Partial Class frmFileSelect
         Me.GroupBox1.PerformLayout()
         CType(Me.numVersionUP, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.numVersion, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.GroupBox2.ResumeLayout(False)
+        Me.GroupBox2.PerformLayout()
+        CType(Me.numVersionUP2, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.NumericUpDown2, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 
     End Sub
@@ -268,4 +448,18 @@ Partial Class frmFileSelect
     Friend WithEvents txtFileNameNew As System.Windows.Forms.TextBox
     Friend WithEvents chkExcel As System.Windows.Forms.CheckBox
     Friend WithEvents chkHoan As System.Windows.Forms.CheckBox
+    Friend WithEvents GroupBox2 As GroupBox
+    Friend WithEvents chkHoan2 As CheckBox
+    Friend WithEvents chkExcel2 As CheckBox
+    Friend WithEvents txtFileNameNew2 As TextBox
+    Friend WithEvents lblVersionUP2 As Label
+    Friend WithEvents chkVersionUP2 As System.Windows.Forms.CheckBox
+    Friend WithEvents chkCompile2 As CheckBox
+    Friend WithEvents numVersionUP2 As NumericUpDown
+    Friend WithEvents NumericUpDown2 As NumericUpDown
+    Friend WithEvents txtFileName2 As TextBox
+    Friend WithEvents Label4 As Label
+    Friend WithEvents cmdRef2 As Button
+    Friend WithEvents txtFilePath2 As TextBox
+    Friend WithEvents Label5 As Label
 End Class

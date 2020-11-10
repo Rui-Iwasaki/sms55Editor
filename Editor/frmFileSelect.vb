@@ -192,6 +192,7 @@
                         'numVersion.Enabled = True
 
                         chkVersionUP.Enabled = mblnUseVersionUP
+                        chkVersionUP2.Enabled = mblnUseVersionUP
                         chkCompile.Enabled = True
 
                         'T,Ueki フォルダ仕様管理変更
@@ -212,6 +213,7 @@
                         txtFilePath.Enabled = False
                         txtFileName.Enabled = True
                         chkVersionUP.Enabled = mblnUseVersionUP
+                        chkVersionUP2.Enabled = mblnUseVersionUP
                         chkCompile.Enabled = False
 
                 End Select
@@ -271,6 +273,83 @@
                                 Call mGetPathAndFileName(fdgFolder.SelectedPath, .strFilePath, .strFileName)
                                 txtFilePath.Text = .strFilePath
                                 txtFileName.Text = .strFileName
+
+                                ' ''更新の場合はバージョンコンボ設定
+                                'Call mSetComboVersion(mudtFileMode, mudtFileInfoTemp)
+                                'cmbVersion.SelectedIndex = cmbVersion.Items.Count - 1
+
+                                If Not blnExistVersion Then
+
+                                    ''バージョンフォルダが存在せずコンパイルフォルダのみが存在する場合
+                                    If blnExistCompile Then
+                                        'numVersion.Enabled = False
+                                        chkCompile.Checked = True
+                                    End If
+
+                                    'Else
+
+                                    ' ''バージョンフォルダが存在する場合は最新バージョン表示
+                                    'Call mSetVersionNum(mudtFileMode, mudtFileInfoTemp)
+
+                                End If
+
+                        End Select
+
+                    End If
+
+                End If
+
+            End With
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Sub
+    '--------------------------------------------------------------------
+    ' 機能      : 二個目のフォルダ参照ボタンクリック
+    ' 返り値    : なし
+    ' 引き数    : なし
+    ' 機能説明  : フォルダ選択ダイアログを表示する
+    '--------------------------------------------------------------------
+    Private Sub cmdRef_Click2(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles cmdRef.Click
+
+        Try
+
+            Dim strFilePath2 As String = ""
+            Dim strFileName2 As String = ""
+            Dim strVersions2() As String = Nothing
+            Dim blnExistVersion As Boolean
+            Dim blnExistCompile As Boolean
+
+            With mudtFileInfoTemp
+
+                ''初期フォルダ設定
+                If System.IO.Directory.Exists(txtFilePath2.Text.Trim()) Then
+                    fdgFolder.SelectedPath = txtFilePath2.Text.Trim()
+                Else
+                    fdgFolder.SelectedPath = "C:\"
+                End If
+
+                ''フォルダ選択ダイアログ表示
+                If fdgFolder.ShowDialog = Windows.Forms.DialogResult.OK Then
+
+                    ''保存フォルダとして正しいフォルダが選択されたかチェック
+                    If mChkSelectFolder(fdgFolder.SelectedPath, blnExistVersion, blnExistCompile) Then
+
+                        Select Case mudtFileMode
+                            Case gEnmFileMode.fmNew
+
+                                ''新規の場合はそのまま表示
+                                txtFilePath2.Text = fdgFolder.SelectedPath
+                                txtFileName2.Text = ""
+
+                            Case gEnmFileMode.fmEdit
+
+                                ''ファイル情報表示
+                                Call mGetPathAndFileName(fdgFolder.SelectedPath, .strFilePath2, .strFileName2)
+                                txtFilePath2.Text = .strFilePath2
+                                txtFileName2.Text = .strFileName2
 
                                 ' ''更新の場合はバージョンコンボ設定
                                 'Call mSetComboVersion(mudtFileMode, mudtFileInfoTemp)
@@ -725,7 +804,7 @@
     ' 引き数    : なし
     ' 機能説明  : コントロールの表示/非表示を設定する
     '--------------------------------------------------------------------
-    Private Sub chkVersionUP_CheckedChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles chkVersionUP.CheckedChanged
+    Private Sub chkVersionUP_CheckedChanged(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles chkVersionUP.CheckedChanged,chkVersionUP2.CheckedChanged
 
         Try
 
@@ -737,16 +816,27 @@
             Dim NewVer As String
             Dim NewVerStr As String
 
+            Dim OldVertxt2 As String
+            Dim OldVer2 As String
+            Dim OldVerLen2 As Integer
+            Dim OldVerAsc2 As Integer
+            Dim NewVer2 As String
+            Dim NewVerStr2 As String
+
             'VerUP時の更新先フォルダ予想
             OldVertxt = txtFileName.Text
             OldVerLen = Len(OldVertxt)
 
+            OldVertxt2 = txtFileName2.Text
+            OldVerLen2 = Len(OldVertxt2)
             '旧バージョン長さ
             OldVer = Mid(OldVertxt, OldVerLen, 1)
 
+            OldVer2 = Mid(OldVertxt2, OldVerLen2, 1)
             '文字を数値に変更
             OldVerAsc = Asc(OldVer)
 
+            OldVerAsc2 = Asc(OldVer2)
             '数値変換後、1加算して文字に変換
             'Ver2.0.1.3
             'Z,zの次は「[」ではなくA,aとする
@@ -759,15 +849,29 @@
                     NewVerStr = Chr(OldVerAsc + 1)
             End Select
 
+            Select Case Chr(OldVerAsc2)
+                Case "Z"
+                    NewVerStr2 = "A"
+                Case "z"
+                    NewVerStr2 = "a"
+                Case Else
+                    NewVerStr2 = Chr(OldVerAsc2 + 1)
+            End Select
 
             '新バージョンに置き換え
             NewVer = (Mid(OldVertxt, 1, OldVerLen - 1)) + NewVerStr
+            NewVer2 = (Mid(OldVertxt2, 1, OldVerLen2 - 1)) + NewVerStr2
 
+            lblVersionUP2.Visible = chkVersionUP2.Checked
             lblVersionUP.Visible = chkVersionUP.Checked
 
             'T.Ueki フォルダ管理仕様変更による 
+            txtFileNameNew2.Visible = chkVersionUP2.Checked
+            txtFileNameNew2.Text = NewVer2
+
             txtFileNameNew.Visible = chkVersionUP.Checked
             txtFileNameNew.Text = NewVer
+
 
             'numVersionUP.Visible = chkVersionUP.Checked
 
@@ -1256,6 +1360,18 @@
         Catch ex As Exception
             Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
         End Try
+
+    End Sub
+
+    Private Sub chkHoan_CheckedChanged(sender As Object, e As EventArgs) Handles chkHoan.CheckedChanged
+
+    End Sub
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles cmdRef2.Click
+        Call cmdRef_Click2(sender, e)
+    End Sub
+
+    Private Sub txtFilePath_TextChanged(sender As Object, e As EventArgs) Handles txtFilePath.TextChanged
 
     End Sub
 
