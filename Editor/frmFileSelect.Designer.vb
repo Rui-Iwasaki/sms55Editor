@@ -76,19 +76,20 @@ Partial Class frmFileSelect
         Me.GroupBox1.Controls.Add(Me.cmdRef)
         Me.GroupBox1.Controls.Add(Me.txtFilePath)
         Me.GroupBox1.Controls.Add(Me.Label1)
+        Me.GroupBox1.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.GroupBox1.Location = New System.Drawing.Point(12, 12)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Size = New System.Drawing.Size(638, 130)
         Me.GroupBox1.TabIndex = 0
         Me.GroupBox1.TabStop = False
-        Me.GroupBox1.Text = "File"
+        Me.GroupBox1.Text = "No.1 FCU File"
         '
         'chkHoan
         '
         Me.chkHoan.AutoSize = True
         Me.chkHoan.Location = New System.Drawing.Point(398, 105)
         Me.chkHoan.Name = "chkHoan"
-        Me.chkHoan.Size = New System.Drawing.Size(138, 16)
+        Me.chkHoan.Size = New System.Drawing.Size(157, 16)
         Me.chkHoan.TabIndex = 13
         Me.chkHoan.Text = "Japanese menu(Hoan)"
         Me.chkHoan.UseVisualStyleBackColor = True
@@ -98,6 +99,7 @@ Partial Class frmFileSelect
         Me.chkExcel.AutoSize = True
         Me.chkExcel.Checked = True
         Me.chkExcel.CheckState = System.Windows.Forms.CheckState.Checked
+        Me.chkExcel.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.chkExcel.Location = New System.Drawing.Point(548, 105)
         Me.chkExcel.Name = "chkExcel"
         Me.chkExcel.Size = New System.Drawing.Size(72, 16)
@@ -119,7 +121,7 @@ Partial Class frmFileSelect
         Me.lblVersionUP.AutoSize = True
         Me.lblVersionUP.Location = New System.Drawing.Point(203, 54)
         Me.lblVersionUP.Name = "lblVersionUP"
-        Me.lblVersionUP.Size = New System.Drawing.Size(17, 12)
+        Me.lblVersionUP.Size = New System.Drawing.Size(19, 12)
         Me.lblVersionUP.TabIndex = 10
         Me.lblVersionUP.Text = "->"
         Me.lblVersionUP.Visible = False
@@ -127,6 +129,7 @@ Partial Class frmFileSelect
         'chkVersionUP
         '
         Me.chkVersionUP.AutoSize = True
+        Me.chkVersionUP.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.chkVersionUP.Location = New System.Drawing.Point(104, 79)
         Me.chkVersionUP.Name = "chkVersionUP"
         Me.chkVersionUP.Size = New System.Drawing.Size(84, 16)
@@ -137,6 +140,7 @@ Partial Class frmFileSelect
         'chkCompile
         '
         Me.chkCompile.AutoSize = True
+        Me.chkCompile.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.chkCompile.Location = New System.Drawing.Point(104, 101)
         Me.chkCompile.Name = "chkCompile"
         Me.chkCompile.Size = New System.Drawing.Size(126, 16)
@@ -176,6 +180,7 @@ Partial Class frmFileSelect
         '
         'txtFileName
         '
+        Me.txtFileName.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.txtFileName.Location = New System.Drawing.Point(104, 51)
         Me.txtFileName.MaxLength = 8
         Me.txtFileName.Name = "txtFileName"
@@ -185,6 +190,7 @@ Partial Class frmFileSelect
         'Label2
         '
         Me.Label2.AutoSize = True
+        Me.Label2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.Label2.Location = New System.Drawing.Point(20, 54)
         Me.Label2.Name = "Label2"
         Me.Label2.Size = New System.Drawing.Size(59, 12)
@@ -204,6 +210,7 @@ Partial Class frmFileSelect
         '
         'txtFilePath
         '
+        Me.txtFilePath.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.txtFilePath.Location = New System.Drawing.Point(104, 26)
         Me.txtFilePath.Name = "txtFilePath"
         Me.txtFilePath.Size = New System.Drawing.Size(489, 19)
@@ -212,6 +219,7 @@ Partial Class frmFileSelect
         'Label1
         '
         Me.Label1.AutoSize = True
+        Me.Label1.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.Label1.Location = New System.Drawing.Point(19, 29)
         Me.Label1.Name = "Label1"
         Me.Label1.Size = New System.Drawing.Size(77, 12)
@@ -260,19 +268,21 @@ Partial Class frmFileSelect
         Me.GroupBox2.Controls.Add(Me.cmdRef2)
         Me.GroupBox2.Controls.Add(Me.txtFilePath2)
         Me.GroupBox2.Controls.Add(Me.Label5)
+        Me.GroupBox2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.GroupBox2.Location = New System.Drawing.Point(12, 169)
         Me.GroupBox2.Name = "GroupBox2"
         Me.GroupBox2.Size = New System.Drawing.Size(638, 130)
         Me.GroupBox2.TabIndex = 6
         Me.GroupBox2.TabStop = False
-        Me.GroupBox2.Text = "File"
+        Me.GroupBox2.Text = "No.2 FCU File"
         '
         'chkHoan2
         '
         Me.chkHoan2.AutoSize = True
+        Me.chkHoan2.ForeColor = System.Drawing.Color.Black
         Me.chkHoan2.Location = New System.Drawing.Point(398, 105)
         Me.chkHoan2.Name = "chkHoan2"
-        Me.chkHoan2.Size = New System.Drawing.Size(138, 16)
+        Me.chkHoan2.Size = New System.Drawing.Size(157, 16)
         Me.chkHoan2.TabIndex = 13
         Me.chkHoan2.Text = "Japanese menu(Hoan)"
         Me.chkHoan2.UseVisualStyleBackColor = True
@@ -283,6 +293,7 @@ Partial Class frmFileSelect
         Me.chkExcel2.AutoSize = True
         Me.chkExcel2.Checked = True
         Me.chkExcel2.CheckState = System.Windows.Forms.CheckState.Checked
+        Me.chkExcel2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.chkExcel2.Location = New System.Drawing.Point(548, 105)
         Me.chkExcel2.Name = "chkExcel2"
         Me.chkExcel2.Size = New System.Drawing.Size(72, 16)
@@ -292,6 +303,7 @@ Partial Class frmFileSelect
         '
         'txtFileNameNew2
         '
+        Me.txtFileNameNew2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.txtFileNameNew2.Location = New System.Drawing.Point(226, 51)
         Me.txtFileNameNew2.MaxLength = 8
         Me.txtFileNameNew2.Name = "txtFileNameNew2"
@@ -304,7 +316,7 @@ Partial Class frmFileSelect
         Me.lblVersionUP2.AutoSize = True
         Me.lblVersionUP2.Location = New System.Drawing.Point(203, 54)
         Me.lblVersionUP2.Name = "lblVersionUP2"
-        Me.lblVersionUP2.Size = New System.Drawing.Size(17, 12)
+        Me.lblVersionUP2.Size = New System.Drawing.Size(19, 12)
         Me.lblVersionUP2.TabIndex = 10
         Me.lblVersionUP2.Text = "->"
         Me.lblVersionUP2.Visible = False
@@ -312,6 +324,7 @@ Partial Class frmFileSelect
         'chkVersionUP2
         '
         Me.chkVersionUP2.AutoSize = True
+        Me.chkVersionUP2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.chkVersionUP2.Location = New System.Drawing.Point(104, 79)
         Me.chkVersionUP2.Name = "chkVersionUP2"
         Me.chkVersionUP2.Size = New System.Drawing.Size(84, 16)
@@ -322,6 +335,7 @@ Partial Class frmFileSelect
         'chkCompile2
         '
         Me.chkCompile2.AutoSize = True
+        Me.chkCompile2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.chkCompile2.Location = New System.Drawing.Point(104, 101)
         Me.chkCompile2.Name = "chkCompile2"
         Me.chkCompile2.Size = New System.Drawing.Size(126, 16)
@@ -361,6 +375,7 @@ Partial Class frmFileSelect
         '
         'txtFileName2
         '
+        Me.txtFileName2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.txtFileName2.Location = New System.Drawing.Point(104, 51)
         Me.txtFileName2.MaxLength = 8
         Me.txtFileName2.Name = "txtFileName2"
@@ -370,6 +385,7 @@ Partial Class frmFileSelect
         'Label4
         '
         Me.Label4.AutoSize = True
+        Me.Label4.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.Label4.Location = New System.Drawing.Point(20, 54)
         Me.Label4.Name = "Label4"
         Me.Label4.Size = New System.Drawing.Size(59, 12)
@@ -389,6 +405,7 @@ Partial Class frmFileSelect
         '
         'txtFilePath2
         '
+        Me.txtFilePath2.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.txtFilePath2.Location = New System.Drawing.Point(104, 26)
         Me.txtFilePath2.Name = "txtFilePath2"
         Me.txtFilePath2.Size = New System.Drawing.Size(489, 19)
@@ -397,6 +414,7 @@ Partial Class frmFileSelect
         'Label5
         '
         Me.Label5.AutoSize = True
+        Me.Label5.Font = New System.Drawing.Font("ＭＳ ゴシック", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(128, Byte))
         Me.Label5.Location = New System.Drawing.Point(19, 29)
         Me.Label5.Name = "Label5"
         Me.Label5.Size = New System.Drawing.Size(77, 12)

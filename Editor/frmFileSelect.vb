@@ -180,6 +180,9 @@
                         txtFileName.Text = .strFileName
 
 
+                        txtFilePath2.Text = .strFilePath2
+                        txtFileName2.Text = .strFileName2
+
                         'T,Ueki フォルダ仕様管理変更
                         'numVersion.Value = My.Settings.SelectVersion
                         cmdRef.Enabled = True
@@ -407,6 +410,9 @@
                 ''画面設定値を構造体に格納
                 .strFilePath = txtFilePath.Text
                 .strFileName = txtFileName.Text
+
+                .strFilePath2 = txtFilePath2.Text
+                .strFileName2 = txtFileName2.Text
 
                 'T.Ueki ファイル管理仕様変更
                 '.strFileVersion = numVersion.Text

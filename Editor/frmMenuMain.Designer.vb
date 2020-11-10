@@ -76,6 +76,7 @@ Partial Class frmMenuMain
         Me.fraExt = New System.Windows.Forms.GroupBox()
         Me.cmdExtAlarm1 = New System.Windows.Forms.Button()
         Me.fraOps = New System.Windows.Forms.GroupBox()
+        Me.cmdLoadCurve = New System.Windows.Forms.Button()
         Me.cmdOPS4 = New System.Windows.Forms.Button()
         Me.cmdOPS3 = New System.Windows.Forms.Button()
         Me.cmdOPS5 = New System.Windows.Forms.Button()
@@ -131,11 +132,17 @@ Partial Class frmMenuMain
         Me.GrpSys = New System.Windows.Forms.GroupBox()
         Me.CmbAlmLvl = New System.Windows.Forms.ComboBox()
         Me.fraOtherTools = New System.Windows.Forms.GroupBox()
-        Me.cmdLoadCurve = New System.Windows.Forms.Button()
         Me.cmdOtherTool = New System.Windows.Forms.Button()
         Me.btnJRCSbatch = New System.Windows.Forms.Button()
         Me.Button1 = New System.Windows.Forms.Button()
         Me.btnPIDtrendSET = New System.Windows.Forms.Button()
+        Me.GroupBox2 = New System.Windows.Forms.GroupBox()
+        Me.lblFileName2 = New System.Windows.Forms.Label()
+        Me.lblShipNoMachinery2 = New System.Windows.Forms.Label()
+        Me.Label8 = New System.Windows.Forms.Label()
+        Me.lblFilePath2 = New System.Windows.Forms.Label()
+        Me.Label11 = New System.Windows.Forms.Label()
+        Me.Label12 = New System.Windows.Forms.Label()
         Me.fraCmp.SuspendLayout()
         Me.fraPrt.SuspendLayout()
         Me.fraExt.SuspendLayout()
@@ -148,6 +155,7 @@ Partial Class frmMenuMain
         Me.fraChk.SuspendLayout()
         Me.GrpSys.SuspendLayout()
         Me.fraOtherTools.SuspendLayout()
+        Me.GroupBox2.SuspendLayout()
         Me.SuspendLayout()
         '
         'fraCmp
@@ -157,7 +165,7 @@ Partial Class frmMenuMain
         Me.fraCmp.Controls.Add(Me.cmdErrorCheck)
         Me.fraCmp.Controls.Add(Me.cmdCompile1)
         Me.fraCmp.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.fraCmp.Location = New System.Drawing.Point(652, 354)
+        Me.fraCmp.Location = New System.Drawing.Point(652, 471)
         Me.fraCmp.Name = "fraCmp"
         Me.fraCmp.Padding = New System.Windows.Forms.Padding(0)
         Me.fraCmp.RightToLeft = System.Windows.Forms.RightToLeft.No
@@ -214,7 +222,7 @@ Partial Class frmMenuMain
         Me.fraPrt.Controls.Add(Me.cmdPrint3)
         Me.fraPrt.Controls.Add(Me.cmdPrint2)
         Me.fraPrt.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.fraPrt.Location = New System.Drawing.Point(492, 130)
+        Me.fraPrt.Location = New System.Drawing.Point(492, 247)
         Me.fraPrt.Name = "fraPrt"
         Me.fraPrt.Padding = New System.Windows.Forms.Padding(0)
         Me.fraPrt.RightToLeft = System.Windows.Forms.RightToLeft.No
@@ -294,7 +302,7 @@ Partial Class frmMenuMain
         Me.fraExt.BackColor = System.Drawing.SystemColors.Control
         Me.fraExt.Controls.Add(Me.cmdExtAlarm1)
         Me.fraExt.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.fraExt.Location = New System.Drawing.Point(332, 214)
+        Me.fraExt.Location = New System.Drawing.Point(332, 331)
         Me.fraExt.Name = "fraExt"
         Me.fraExt.Padding = New System.Windows.Forms.Padding(0)
         Me.fraExt.RightToLeft = System.Windows.Forms.RightToLeft.No
@@ -325,7 +333,7 @@ Partial Class frmMenuMain
         Me.fraOps.Controls.Add(Me.cmdOPS5)
         Me.fraOps.Controls.Add(Me.cmdOPS2)
         Me.fraOps.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.fraOps.Location = New System.Drawing.Point(332, 296)
+        Me.fraOps.Location = New System.Drawing.Point(332, 413)
         Me.fraOps.Name = "fraOps"
         Me.fraOps.Padding = New System.Windows.Forms.Padding(0)
         Me.fraOps.RightToLeft = System.Windows.Forms.RightToLeft.No
@@ -333,6 +341,15 @@ Partial Class frmMenuMain
         Me.fraOps.TabIndex = 4
         Me.fraOps.TabStop = False
         Me.fraOps.Text = "OPS Function Set"
+        '
+        'cmdLoadCurve
+        '
+        Me.cmdLoadCurve.Location = New System.Drawing.Point(16, 219)
+        Me.cmdLoadCurve.Name = "cmdLoadCurve"
+        Me.cmdLoadCurve.Size = New System.Drawing.Size(116, 39)
+        Me.cmdLoadCurve.TabIndex = 6
+        Me.cmdLoadCurve.Text = "Load Curve Set"
+        Me.cmdLoadCurve.UseVisualStyleBackColor = True
         '
         'cmdOPS4
         '
@@ -404,7 +421,7 @@ Partial Class frmMenuMain
         Me.cmdOPS1.BackColor = System.Drawing.SystemColors.Control
         Me.cmdOPS1.Cursor = System.Windows.Forms.Cursors.Default
         Me.cmdOPS1.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.cmdOPS1.Location = New System.Drawing.Point(348, 606)
+        Me.cmdOPS1.Location = New System.Drawing.Point(348, 723)
         Me.cmdOPS1.Name = "cmdOPS1"
         Me.cmdOPS1.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.cmdOPS1.Size = New System.Drawing.Size(116, 36)
@@ -418,7 +435,7 @@ Partial Class frmMenuMain
         Me.fraSeq.BackColor = System.Drawing.SystemColors.Control
         Me.fraSeq.Controls.Add(Me.cmdSequence1)
         Me.fraSeq.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.fraSeq.Location = New System.Drawing.Point(332, 130)
+        Me.fraSeq.Location = New System.Drawing.Point(332, 247)
         Me.fraSeq.Name = "fraSeq"
         Me.fraSeq.Padding = New System.Windows.Forms.Padding(0)
         Me.fraSeq.RightToLeft = System.Windows.Forms.RightToLeft.No
@@ -454,7 +471,7 @@ Partial Class frmMenuMain
         Me.fraCh.Controls.Add(Me.cmdChannel2)
         Me.fraCh.Controls.Add(Me.cmdChannel1)
         Me.fraCh.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.fraCh.Location = New System.Drawing.Point(172, 130)
+        Me.fraCh.Location = New System.Drawing.Point(172, 247)
         Me.fraCh.Name = "fraCh"
         Me.fraCh.Padding = New System.Windows.Forms.Padding(0)
         Me.fraCh.RightToLeft = System.Windows.Forms.RightToLeft.No
@@ -598,7 +615,7 @@ Partial Class frmMenuMain
         Me.cmdComposite.BackColor = System.Drawing.SystemColors.Control
         Me.cmdComposite.Cursor = System.Windows.Forms.Cursors.Default
         Me.cmdComposite.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.cmdComposite.Location = New System.Drawing.Point(508, 644)
+        Me.cmdComposite.Location = New System.Drawing.Point(508, 761)
         Me.cmdComposite.Name = "cmdComposite"
         Me.cmdComposite.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.cmdComposite.Size = New System.Drawing.Size(116, 40)
@@ -612,7 +629,7 @@ Partial Class frmMenuMain
         Me.cmdChannel3.BackColor = System.Drawing.SystemColors.Control
         Me.cmdChannel3.Cursor = System.Windows.Forms.Cursors.Default
         Me.cmdChannel3.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.cmdChannel3.Location = New System.Drawing.Point(348, 648)
+        Me.cmdChannel3.Location = New System.Drawing.Point(348, 765)
         Me.cmdChannel3.Name = "cmdChannel3"
         Me.cmdChannel3.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.cmdChannel3.Size = New System.Drawing.Size(116, 36)
@@ -630,7 +647,7 @@ Partial Class frmMenuMain
         Me.fraSys.Controls.Add(Me.cmdSystem3)
         Me.fraSys.Controls.Add(Me.cmdSystem1)
         Me.fraSys.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.fraSys.Location = New System.Drawing.Point(12, 412)
+        Me.fraSys.Location = New System.Drawing.Point(12, 529)
         Me.fraSys.Name = "fraSys"
         Me.fraSys.Padding = New System.Windows.Forms.Padding(0)
         Me.fraSys.RightToLeft = System.Windows.Forms.RightToLeft.No
@@ -696,7 +713,7 @@ Partial Class frmMenuMain
         Me.cmdSystem2.BackColor = System.Drawing.SystemColors.Control
         Me.cmdSystem2.Cursor = System.Windows.Forms.Cursors.Default
         Me.cmdSystem2.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.cmdSystem2.Location = New System.Drawing.Point(188, 644)
+        Me.cmdSystem2.Location = New System.Drawing.Point(188, 761)
         Me.cmdSystem2.Name = "cmdSystem2"
         Me.cmdSystem2.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.cmdSystem2.Size = New System.Drawing.Size(116, 20)
@@ -714,7 +731,7 @@ Partial Class frmMenuMain
         Me.fraFile.Controls.Add(Me.cmdFile3)
         Me.fraFile.Controls.Add(Me.cmdFile2)
         Me.fraFile.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.fraFile.Location = New System.Drawing.Point(12, 130)
+        Me.fraFile.Location = New System.Drawing.Point(12, 247)
         Me.fraFile.Name = "fraFile"
         Me.fraFile.Padding = New System.Windows.Forms.Padding(0)
         Me.fraFile.RightToLeft = System.Windows.Forms.RightToLeft.No
@@ -887,7 +904,7 @@ Partial Class frmMenuMain
         Me.lblFileMode.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D
         Me.lblFileMode.Cursor = System.Windows.Forms.Cursors.Default
         Me.lblFileMode.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.lblFileMode.Location = New System.Drawing.Point(245, 667)
+        Me.lblFileMode.Location = New System.Drawing.Point(245, 784)
         Me.lblFileMode.Name = "lblFileMode"
         Me.lblFileMode.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.lblFileMode.Size = New System.Drawing.Size(69, 21)
@@ -901,7 +918,7 @@ Partial Class frmMenuMain
         Me.Label4.BackColor = System.Drawing.SystemColors.Control
         Me.Label4.Cursor = System.Windows.Forms.Cursors.Default
         Me.Label4.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.Label4.Location = New System.Drawing.Point(180, 671)
+        Me.Label4.Location = New System.Drawing.Point(180, 788)
         Me.Label4.Name = "Label4"
         Me.Label4.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.Label4.Size = New System.Drawing.Size(59, 12)
@@ -915,7 +932,7 @@ Partial Class frmMenuMain
         Me.cmdExit.Cursor = System.Windows.Forms.Cursors.Default
         Me.cmdExit.DialogResult = System.Windows.Forms.DialogResult.Cancel
         Me.cmdExit.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.cmdExit.Location = New System.Drawing.Point(668, 644)
+        Me.cmdExit.Location = New System.Drawing.Point(668, 761)
         Me.cmdExit.Name = "cmdExit"
         Me.cmdExit.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.cmdExit.Size = New System.Drawing.Size(116, 40)
@@ -931,7 +948,7 @@ Partial Class frmMenuMain
         Me.fraChk.Controls.Add(Me.cmdChkChID)
         Me.fraChk.Controls.Add(Me.cmdChkChUse)
         Me.fraChk.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.fraChk.Location = New System.Drawing.Point(652, 130)
+        Me.fraChk.Location = New System.Drawing.Point(652, 247)
         Me.fraChk.Name = "fraChk"
         Me.fraChk.Padding = New System.Windows.Forms.Padding(0)
         Me.fraChk.RightToLeft = System.Windows.Forms.RightToLeft.No
@@ -995,7 +1012,7 @@ Partial Class frmMenuMain
         '
         'cmdCelar
         '
-        Me.cmdCelar.Location = New System.Drawing.Point(668, 538)
+        Me.cmdCelar.Location = New System.Drawing.Point(668, 655)
         Me.cmdCelar.Name = "cmdCelar"
         Me.cmdCelar.Size = New System.Drawing.Size(116, 38)
         Me.cmdCelar.TabIndex = 53
@@ -1052,21 +1069,12 @@ Partial Class frmMenuMain
         'fraOtherTools
         '
         Me.fraOtherTools.Controls.Add(Me.cmdOtherTool)
-        Me.fraOtherTools.Location = New System.Drawing.Point(495, 394)
+        Me.fraOtherTools.Location = New System.Drawing.Point(495, 511)
         Me.fraOtherTools.Name = "fraOtherTools"
         Me.fraOtherTools.Size = New System.Drawing.Size(143, 62)
         Me.fraOtherTools.TabIndex = 58
         Me.fraOtherTools.TabStop = False
         Me.fraOtherTools.Text = "Other Tools"
-        '
-        'cmdLoadCurve
-        '
-        Me.cmdLoadCurve.Location = New System.Drawing.Point(16, 219)
-        Me.cmdLoadCurve.Name = "cmdLoadCurve"
-        Me.cmdLoadCurve.Size = New System.Drawing.Size(116, 39)
-        Me.cmdLoadCurve.TabIndex = 6
-        Me.cmdLoadCurve.Text = "Load Curve Set"
-        Me.cmdLoadCurve.UseVisualStyleBackColor = True
         '
         'cmdOtherTool
         '
@@ -1083,7 +1091,7 @@ Partial Class frmMenuMain
         '
         'btnJRCSbatch
         '
-        Me.btnJRCSbatch.Location = New System.Drawing.Point(549, 581)
+        Me.btnJRCSbatch.Location = New System.Drawing.Point(549, 698)
         Me.btnJRCSbatch.Name = "btnJRCSbatch"
         Me.btnJRCSbatch.Size = New System.Drawing.Size(75, 28)
         Me.btnJRCSbatch.TabIndex = 59
@@ -1093,7 +1101,7 @@ Partial Class frmMenuMain
         '
         'Button1
         '
-        Me.Button1.Location = New System.Drawing.Point(508, 522)
+        Me.Button1.Location = New System.Drawing.Point(508, 639)
         Me.Button1.Name = "Button1"
         Me.Button1.Size = New System.Drawing.Size(57, 29)
         Me.Button1.TabIndex = 60
@@ -1106,7 +1114,7 @@ Partial Class frmMenuMain
         Me.btnPIDtrendSET.BackColor = System.Drawing.SystemColors.Control
         Me.btnPIDtrendSET.Cursor = System.Windows.Forms.Cursors.Default
         Me.btnPIDtrendSET.ForeColor = System.Drawing.SystemColors.ControlText
-        Me.btnPIDtrendSET.Location = New System.Drawing.Point(348, 568)
+        Me.btnPIDtrendSET.Location = New System.Drawing.Point(348, 685)
         Me.btnPIDtrendSET.Name = "btnPIDtrendSET"
         Me.btnPIDtrendSET.RightToLeft = System.Windows.Forms.RightToLeft.No
         Me.btnPIDtrendSET.Size = New System.Drawing.Size(116, 32)
@@ -1114,13 +1122,107 @@ Partial Class frmMenuMain
         Me.btnPIDtrendSET.Text = "PID Trend SET"
         Me.btnPIDtrendSET.UseVisualStyleBackColor = True
         '
+        'GroupBox2
+        '
+        Me.GroupBox2.Controls.Add(Me.lblFileName2)
+        Me.GroupBox2.Controls.Add(Me.lblShipNoMachinery2)
+        Me.GroupBox2.Controls.Add(Me.Label8)
+        Me.GroupBox2.Controls.Add(Me.lblFilePath2)
+        Me.GroupBox2.Controls.Add(Me.Label11)
+        Me.GroupBox2.Controls.Add(Me.Label12)
+        Me.GroupBox2.Location = New System.Drawing.Point(12, 128)
+        Me.GroupBox2.Name = "GroupBox2"
+        Me.GroupBox2.Size = New System.Drawing.Size(612, 110)
+        Me.GroupBox2.TabIndex = 62
+        Me.GroupBox2.TabStop = False
+        Me.GroupBox2.Text = "File Infomation"
+        '
+        'lblFileName2
+        '
+        Me.lblFileName2.BackColor = System.Drawing.SystemColors.Control
+        Me.lblFileName2.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D
+        Me.lblFileName2.Cursor = System.Windows.Forms.Cursors.Default
+        Me.lblFileName2.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.lblFileName2.Location = New System.Drawing.Point(102, 24)
+        Me.lblFileName2.Name = "lblFileName2"
+        Me.lblFileName2.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.lblFileName2.Size = New System.Drawing.Size(100, 21)
+        Me.lblFileName2.TabIndex = 42
+        Me.lblFileName2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        '
+        'lblShipNoMachinery2
+        '
+        Me.lblShipNoMachinery2.BackColor = System.Drawing.SystemColors.Control
+        Me.lblShipNoMachinery2.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D
+        Me.lblShipNoMachinery2.Cursor = System.Windows.Forms.Cursors.Default
+        Me.lblShipNoMachinery2.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.lblShipNoMachinery2.Location = New System.Drawing.Point(284, 24)
+        Me.lblShipNoMachinery2.Name = "lblShipNoMachinery2"
+        Me.lblShipNoMachinery2.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.lblShipNoMachinery2.Size = New System.Drawing.Size(312, 21)
+        Me.lblShipNoMachinery2.TabIndex = 47
+        Me.lblShipNoMachinery2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        '
+        'Label8
+        '
+        Me.Label8.AutoSize = True
+        Me.Label8.BackColor = System.Drawing.SystemColors.Control
+        Me.Label8.Cursor = System.Windows.Forms.Cursors.Default
+        Me.Label8.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.Label8.Location = New System.Drawing.Point(38, 28)
+        Me.Label8.Name = "Label8"
+        Me.Label8.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.Label8.Size = New System.Drawing.Size(59, 12)
+        Me.Label8.TabIndex = 39
+        Me.Label8.Text = "File Name"
+        '
+        'lblFilePath2
+        '
+        Me.lblFilePath2.BackColor = System.Drawing.SystemColors.Control
+        Me.lblFilePath2.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D
+        Me.lblFilePath2.Cursor = System.Windows.Forms.Cursors.Default
+        Me.lblFilePath2.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.lblFilePath2.Location = New System.Drawing.Point(102, 76)
+        Me.lblFilePath2.Name = "lblFilePath2"
+        Me.lblFilePath2.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.lblFilePath2.Size = New System.Drawing.Size(494, 21)
+        Me.lblFilePath2.TabIndex = 46
+        Me.lblFilePath2.TextAlign = System.Drawing.ContentAlignment.MiddleLeft
+        '
+        'Label11
+        '
+        Me.Label11.AutoSize = True
+        Me.Label11.BackColor = System.Drawing.SystemColors.Control
+        Me.Label11.Cursor = System.Windows.Forms.Cursors.Default
+        Me.Label11.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.Label11.Location = New System.Drawing.Point(231, 28)
+        Me.Label11.Name = "Label11"
+        Me.Label11.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.Label11.Size = New System.Drawing.Size(53, 12)
+        Me.Label11.TabIndex = 40
+        Me.Label11.Text = "Ship No."
+        '
+        'Label12
+        '
+        Me.Label12.AutoSize = True
+        Me.Label12.BackColor = System.Drawing.SystemColors.Control
+        Me.Label12.Cursor = System.Windows.Forms.Cursors.Default
+        Me.Label12.ForeColor = System.Drawing.SystemColors.ControlText
+        Me.Label12.Location = New System.Drawing.Point(38, 81)
+        Me.Label12.Name = "Label12"
+        Me.Label12.RightToLeft = System.Windows.Forms.RightToLeft.No
+        Me.Label12.Size = New System.Drawing.Size(59, 12)
+        Me.Label12.TabIndex = 45
+        Me.Label12.Text = "File Path"
+        '
         'frmMenuMain
         '
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None
         Me.BackColor = System.Drawing.SystemColors.Control
         Me.CancelButton = Me.cmdExit
-        Me.ClientSize = New System.Drawing.Size(810, 692)
+        Me.ClientSize = New System.Drawing.Size(826, 825)
         Me.ControlBox = False
+        Me.Controls.Add(Me.GroupBox2)
         Me.Controls.Add(Me.btnPIDtrendSET)
         Me.Controls.Add(Me.Button1)
         Me.Controls.Add(Me.btnJRCSbatch)
@@ -1169,6 +1271,8 @@ Partial Class frmMenuMain
         Me.GrpSys.ResumeLayout(False)
         Me.GrpSys.PerformLayout()
         Me.fraOtherTools.ResumeLayout(False)
+        Me.GroupBox2.ResumeLayout(False)
+        Me.GroupBox2.PerformLayout()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -1206,6 +1310,13 @@ Partial Class frmMenuMain
     Public WithEvents cmdChannel12 As System.Windows.Forms.Button
     Public WithEvents cmdMeasuringCheck As System.Windows.Forms.Button
     Friend WithEvents cmdLoadCurve As System.Windows.Forms.Button
+    Friend WithEvents GroupBox2 As System.Windows.Forms.GroupBox
+    Public WithEvents lblFileName2 As System.Windows.Forms.Label
+    Public WithEvents lblShipNoMachinery2 As System.Windows.Forms.Label
+    Public WithEvents Label8 As System.Windows.Forms.Label
+    Public WithEvents lblFilePath2 As System.Windows.Forms.Label
+    Public WithEvents Label11 As System.Windows.Forms.Label
+    Public WithEvents Label12 As System.Windows.Forms.Label
 #End Region
 
 End Class

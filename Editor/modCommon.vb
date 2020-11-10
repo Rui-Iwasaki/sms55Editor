@@ -9,6 +9,7 @@ Module modCommon
     Public Structure gTypFileInfo
         Dim strFilePath As String
         Dim strFileName As String
+        'PAX ocean向け追記
         Dim strFilePath2 As String
         Dim strFileName2 As String
         'T,Ueki フォルダ仕様管理変更

@@ -1239,12 +1239,17 @@ Public Class frmMenuMain
 
                 lblFilePath.Text = .strFilePath
 
+                lblFilePath2.Text = .strFilePath2
+
                 'ファイル管理仕様変更 T.Ueki
                 lblFileName.Text = .strFileVersion
                 'lblVersion.Text = .strFileVersion
+
+                lblFileName2.Text = .strFileName2
+
                 'Ver2.0.1.5
                 '画面キャプションの先頭にもファイル名表示
-                Me.Text = "[" & .strFileVersion & "] " & mstrFormName
+                Me.Text = "[" & .strFileVersion & "," & .strFileName2 & "] " & mstrFormName
 
                 ''船番表示
                 Call mDispShipNo()
@@ -1281,6 +1286,7 @@ Public Class frmMenuMain
             'Ver2.0.4.9「^」は消す
             lblShipNoMachinery.Text = gudt.SetChGroupSetM.udtGroup.strShipNo.Replace("^", "")
 
+            lblShipNoMachinery2.Text = gudt.SetChGroupSetM.udtGroup.strShipNo.Replace("^", "")
         Catch ex As Exception
             Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
         End Try
