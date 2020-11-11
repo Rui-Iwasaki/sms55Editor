@@ -1294,6 +1294,53 @@
 
 #End Region
 
+#Region "2つ目の出力ファイル名取得"
+
+    '--------------------------------------------------------------------
+    ' 機能      : 出力ファイル名取得
+    ' 返り値    : 出力ファイル名取得
+    ' 引き数    : ARG1 - (I ) ファイル情報構造体
+    ' 　　　    : ARG2 - (I ) 基本ファイル名
+    ' 機能説明  : [ファイル名]_[バージョン番号]_[基本ファイル名]を作成して返す
+    '--------------------------------------------------------------------
+    Private Function mGetOutputFileName2(ByVal udtFileInfo As gTypFileInfo, _
+                                        ByVal strFileName2 As String, _
+                                        ByVal blnReadCompile As Boolean) As String
+
+        Dim strRtn As String = ""
+
+        Try
+
+            If blnReadCompile Then
+
+                strRtn = strFileName2
+
+            Else
+                'バージョンアップならアップ後の名称を使用する T.Ueki
+                If udtFileInfo.blnVersionUP = True Then
+                    strRtn = udtFileInfo.strFileVersion2 & "_" & strFileName2
+                Else
+                    'ファイル管理仕様変更
+                    strRtn = udtFileInfo.strFileName2 & "_" & strFileName2
+                End If
+
+                'strRtn = udtFileInfo.strFileName & "_" & _
+                '         Format(CInt(udtFileInfo.strFileVersion), "000") & "_" & _
+                '         strFileName
+
+            End If
+
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+        Return strRtn
+
+    End Function
+
+#End Region
+
 #Region "チャンネル設定ファイルの可変長出力対応"
 
     Private Sub mRemakeChannelFileLoad(ByRef strFullPath As String)
@@ -1366,6 +1413,7 @@
 
 #End Region
 
+
 #Region "ファイル入出力関数"
 
 #Region "システム設定"
@@ -1391,13 +1439,15 @@
             Dim strFullPath As String
             Dim strCurPathName As String = gCstPathSystem
             Dim strCurFileName As String = mGetOutputFileName(udtFileInfo, gCstFileSystem, mblnReadCompile)
-
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSystem, mblnReadCompile)
             ''メッセージ更新
             lblMessage.Text = "saving " & strCurFileName : Call lblMessage.Refresh()
 
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
             ''保存パスを作成
             strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName)
             strFullPath = System.IO.Path.Combine(strPathSave, strCurFileName)
+
 
             'Ver2.0.7.B 無関係なファイルを削除する
             Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileSystem)
@@ -1470,11 +1520,15 @@
             Dim intFileNo As Integer
             Dim strPathSystem As String
             Dim strFullPath As String
+            Dim strFullPath2 As String
             Dim strCurPathName As String = gCstPathSystem
             Dim strCurFileName As String = mGetOutputFileName(udtFileInfo, gCstFileSystem, mblnReadCompile)
 
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSystem, mblnReadCompile)
             ''メッセージ更新
             lblMessage.Text = "Loading " & strCurFileName : Call lblMessage.Refresh()
+
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
 
             ''システム設定のパスを作成
             strPathSystem = System.IO.Path.Combine(strPathBase, strCurPathName)
@@ -1482,10 +1536,14 @@
             ''フルパス作成
             strFullPath = System.IO.Path.Combine(strPathSystem, strCurFileName)
 
+            strFullPath2 = System.IO.Path.Combine(strPathSystem, strCurFileName2)
             ''ファイル存在確認
             If Not System.IO.File.Exists(strFullPath) Then
 
                 Call mAddMsgList("Load Error!! The file [" & strFullPath & "] doesn't exist.")
+                intRtn = -1
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
                 intRtn = -1
 
             Else
