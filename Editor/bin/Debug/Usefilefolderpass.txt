@@ -1,2 +1,2 @@
-C:\Users\SDT(IAS)-NOTE003\Desktop\PacOcean向けエディター\1986C
-C:\Users\SDT(IAS)-NOTE003\Desktop\PacOcean向けエディター\Editor(Ver.2.0.9.A)\Editor\bin\Debug
+C:\Users\iwasaki\Desktop\2017C
+C:\Users\iwasaki\Desktop\Editor(Ver.2.0.9.A)\Editor\bin\Debug

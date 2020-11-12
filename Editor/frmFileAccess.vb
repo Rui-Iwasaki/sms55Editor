@@ -245,6 +245,16 @@
                         mintRtn = -1
                     End If
 
+                    If mLoadSetting2() = 0 Then
+
+                        ''読込処理成功時は自動で画面を閉じる
+                        mintRtn = 0
+                        Call Me.Close()
+
+                    Else
+                        mintRtn = -1
+                    End If
+
             End Select
 
             ''画面設定
@@ -1123,6 +1133,327 @@
 
     End Function
 
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のファイル設定値読み込み
+    ' 返り値    : 0:成功、<>0:失敗数
+    ' 引き数    : なし
+    ' 機能説明  : 設定値保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadSetting2() As Integer
+
+        Try
+
+            Dim fileNo As Integer = FreeFile()
+
+            Dim Fso As New Scripting.FileSystemObject
+            Dim intRtn As Integer
+            Dim strPathBase2 As String = ""
+            Dim strPathComp2 As String = ""
+            Dim strPathVerInfoPrev As String = ""
+            Dim strPathUpdateInfo As String = ""
+            Dim FromTempFolder2 As String = ""
+            Dim FromTempFolderCopy2 As String = ""
+            Dim ToTempFolder As String = ""
+
+            '読込完了までファイル未アクセス状態  T.Ueki 2016/6/27
+            FileAccessFlg = False
+
+            ''バージョン番号までのファイルパス作成
+            With mudtFileInfo
+
+                strPathBase2 = System.IO.Path.Combine(.strFilePath2, .strFileName2)
+
+                'T.Ueki ファイル管理仕様変更
+                'strPathBase = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersion), "000"))
+
+                'Mimic用データパスファイル作成
+                FileOpen(fileNo, AppPassTXT, OpenMode.Output)
+                PrintLine(fileNo, strPathBase2)
+                Print(fileNo, AppPass)
+                FileClose(fileNo)
+
+                If CompareRead = False Then
+
+                    'コピー先
+                    FromTempFolder2 = strPathBase2 & "\Temp\"
+                    FromTempFolderCopy2 = strPathBase2 & "\Temp"
+
+                    'コピー元
+                    ToTempFolder = strPathBase2 & "\Compile"
+
+                    ''Tempフォルダ内にCompileフォルダをコピー
+                    If System.IO.Directory.Exists(FromTempFolder2) Then
+                        'Tempフォルダが存在する場合は一端すべて削除
+                        System.IO.Directory.Delete(FromTempFolder2, True)
+
+                        'Tempフォルダを再作成
+                        System.IO.Directory.CreateDirectory(FromTempFolderCopy2)
+
+                        'Compileフォルダがある場合のみコピー  2013.08.07 K.Fujimoto
+                        If System.IO.Directory.Exists(ToTempFolder) Then
+                            Fso.CopyFolder(ToTempFolder, FromTempFolder2, True)
+                        End If
+                    Else
+                        'Tempフォルダが存在しない場合は作成
+                        System.IO.Directory.CreateDirectory(FromTempFolderCopy2)
+
+                        'Compileフォルダがある場合のみコピー  2013.08.07 K.Fujimoto
+                        If System.IO.Directory.Exists(ToTempFolder) Then
+                            Fso.CopyFolder(ToTempFolder, FromTempFolder2, True)
+                        End If
+                    End If
+
+                End If
+
+                strPathVerInfoPrev = System.IO.Path.Combine(System.IO.Path.Combine(strPathBase2, gCstFolderNameEditorInfo), gCstFolderNameVerInfoPre)
+                strPathUpdateInfo = System.IO.Path.Combine(System.IO.Path.Combine(strPathBase2, gCstFolderNameEditorInfo), gCstFolderNameUpdateInfo)
+
+                If mblnReadCompile Then
+                    '2014/5/14 T.Ueki
+                    If CompCFRead = True Then
+                        'CFｶｰﾄﾞからの読み込みはフォルダはそのまま
+                    Else
+                        strPathComp2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameCompile)
+                        strPathBase2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameCompile)
+                    End If
+
+                Else
+                    strPathComp2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameCompile)
+                    strPathBase2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameSave)
+                End If
+
+            End With
+
+
+            With prgBar
+
+                ''プログレスバー初期化
+                .Minimum = 0
+                .Maximum = mCstProgressValueMaxLoad
+                .Value = 0
+
+                '' Setup.iniﾌｧｲﾙ読み込み (最初に読み込む) 2018.12.13 倉重
+                ReadEditIni(strPathUpdateInfo & "\" & gCstIniFile)
+
+                ''システム設定データ読み込み
+                intRtn += mLoadSystem2(mudt.SetSystem, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''FU チャンネル情報読み込み
+                intRtn += mLoadFuChannel2(mudt.SetFu, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''チャンネル情報データ（表示名設定データ）読み込み
+                intRtn += mLoadChDisp(mudt.SetChDisp, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''チャンネル情報読み込み
+                intRtn += mLoadChannel(mudt.SetChInfo, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''コンポジット情報読み込み
+                intRtn += mLoadComposite(mudt.SetChComposite, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''グループ設定読み込み（植木）
+                intRtn += mLoadGroup(mudt.SetChGroupSetM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadGroup(mudt.SetChGroupSetC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''リポーズ入力設定読み込み
+                intRtn += mLoadRepose(mudt.SetChGroupRepose, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''出力チャンネル設定読み込み
+                intRtn += mLoadOutPut(mudt.SetChOutput, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''論理出力設定読み込み
+                intRtn += mLoadOrAnd(mudt.SetChAndOr, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''積算データ設定読み込み
+                intRtn += mLoadChRunHour(mudt.SetChRunHour, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''コントロール使用可／不可設定書き込み
+                intRtn += mLoadCtrlUseNotuse(mudt.SetChCtrlUseM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadCtrlUseNotuse(mudt.SetChCtrlUseC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''SIO設定読み込み
+                intRtn += mLoadChSio(mudt.SetChSio, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''SIO設定CH設定読み込み
+                For i As Integer = 0 To UBound(mudt.SetChSioCh)
+                    intRtn += mLoadChSioCh(mudt.SetChSioCh(i), mudtFileInfo, strPathBase2, i + 1) : .Value += 1 : Application.DoEvents()
+                Next
+
+                'Ver2.0.5.8
+                'SIO設定拡張読み込み ※プログレスバーにプラスはしない
+                For i As Integer = 0 To UBound(mudt.SetChSioExt)
+                    intRtn += mLoadChSioExt(mudt.SetChSioExt(i), mudtFileInfo, strPathBase2, i + 1) : .Value += 0 : Application.DoEvents()
+                Next
+
+                ''排ガス処理演算設定読み込み
+                intRtn += mLoadexhGus(mudt.SetChExhGus, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''延長警報設定読み込み
+                intRtn += mLoadExtAlarm(mudt.SetExtAlarm, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''タイマ設定読み込み
+                intRtn += mLoadTimer(mudt.SetExtTimerSet, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''タイマ表示名称設定読み込み
+                intRtn += mLoadTimerName(mudt.SetExtTimerName, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''シーケンスID読み込み
+                intRtn += mLoadSeqSequenceID(mudt.SetSeqID, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''シーケンス設定読み込み
+                intRtn += mLoadSeqSequenceSet(mudt.SetSeqSet, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                'リニアライズテーブル読み込み
+                intRtn += mLoadSeqLinear(mudt.SetSeqLinear, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                '演算式テーブル読み込み
+                intRtn += mLoadSeqOperationExpression(mudt.SetSeqOpeExp, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''データ保存テーブル設定
+                intRtn += mLoadChDataSaveTable(mudt.SetChDataSave, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''データ転送テーブル設定
+                intRtn += mLoadChDataForwardTableSet(mudt.SetChDataForward, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''OPSスクリーンタイトルデータ読み込み
+                intRtn += mLoadOpsScreenTitle(mudt.SetOpsScreenTitleM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsScreenTitle(mudt.SetOpsScreenTitleC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''プルダウンメニュー
+                intRtn += mLoadManuMain(mudt.SetOpsPulldownMenuM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadManuMain(mudt.SetOpsPulldownMenuC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''セレクションメニュー
+                intRtn += mLoadSelectionMenu(mudt.SetOpsSelectionMenuM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadSelectionMenu(mudt.SetOpsSelectionMenuC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''OPSグラフ設定
+                intRtn += mLoadOpsGraph(mudt.SetOpsGraphM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsGraph(mudt.SetOpsGraphC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                '---------------------------------------------------------------------------
+                'フリーディスプレイとトレンドグラフは空データ出力なので読み込みは行わない
+                '---------------------------------------------------------------------------
+                '' ''フリーディスプレイ
+                ''intRtn += mLoadOpsFreeDisplay(mudt.SetOpsFreeDisplayM, mudtFileInfo, strPathBase, True) : .Value += 1: Application.DoEvents()
+                ''intRtn += mLoadOpsFreeDisplay(mudt.SetOpsFreeDisplayC, mudtFileInfo, strPathBase, False) : .Value += 1: Application.DoEvents()
+
+                '' ''トレンドグラフ
+                ''intRtn += mSaveOpsTrendGraph(mudt.SetOpsTrendGraphM, mudtFileInfo, strPathBase, True) : .Value += 1: Application.DoEvents()
+                ''intRtn += mSaveOpsTrendGraph(mudt.SetOpsTrendGraphC, mudtFileInfo, strPathBase, False) : .Value += 1: Application.DoEvents()
+
+                'PID
+                intRtn += mLoadOpsTrendGraph_PID(mudt.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsTrendGraph_PID(mudt.SetOpsTrendGraphPIDprev, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+
+                ''2014/5/14 コンパイル比較の場合は読み込まない　T.Ueki
+                If mblnReadCompile = False Then
+                    ''ログフォーマット
+                    intRtn += mLoadOpsLogFormat(mudt.SetOpsLogFormatM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                    intRtn += mLoadOpsLogFormat(mudt.SetOpsLogFormatC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                End If
+
+                ''ログフォーマットCHID 　☆2012/10/26 K.Tanigawa
+                intRtn += mLoadOpsLogIdData(mudt.SetOpsLogIdDataM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsLogIdData(mudt.SetOpsLogIdDataC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                '' Ver1.9.3 2016.01.25 ﾛｸﾞｵﾌﾟｼｮﾝ設定追加
+                intRtn += mLoadOpsLogOption(mudt.SetOpsLogOption, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''GWS設定CH設定読み込み 2014.02.04
+                intRtn += mLoadopsGwsCh(mudt.SetOpsGwsCh, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''CH変換テーブル
+                If mblnVersionUP Then
+
+                    '==============================
+                    ''バージョンアップの場合
+                    '==============================
+                    ''コンパイルファイル読み込みの場合
+                    If mblnReadCompile = False Then
+
+                        ''バージョンアップ前のコンパイルフォルダから読み込む
+                        intRtn += mLoadChConv(mudt.SetChConvPrev, mudtFileInfo, strPathComp2)
+
+                    Else
+
+                        ''バージョンアップ前のSaveフォルダから読み込む
+                        intRtn += mLoadChConv(mudt.SetChConvPrev, mudtFileInfo, strPathBase2)
+
+                    End If
+
+                    ''現VerのCH変換テーブルを初期化する
+                    Call gInitSetChConv(mudt.SetChConvNow)
+
+                Else
+
+                    '==============================
+                    ''バージョンアップではない場合
+                    '==============================
+                    ''コンパイルファイル読み込みの場合
+                    If mblnReadCompile = False Then
+                        ''前バージョンのCH変換テーブルをVerInfoPrevフォルダから読み込む
+                        intRtn += mLoadChConv(mudt.SetChConvPrev, mudtFileInfo, strPathVerInfoPrev)
+                    Else
+
+                        ''現バージョンのCH変換テーブルをSaveフォルダから読み込む
+                        'intRtn += mLoadChConv(mudt.SetChConvNow, mudtFileInfo, strPathBase)
+                        intRtn += mLoadChConv(mudt.SetChConvPrev, mudtFileInfo, strPathBase2)
+                    End If
+
+                End If
+
+                .Value += 1 : Application.DoEvents()
+
+                ''コンパイルファイル読み込みの場合
+                If mblnReadCompile = False Then
+                    ''ファイル更新情報
+                    intRtn += mLoadEditorUpdateInfo(mudt.SetEditorUpdateInfo, mudtFileInfo, strPathUpdateInfo) : .Value += 1 : Application.DoEvents()
+                End If
+
+                ''コンパイルファイル読み込み時はチャンネル ID - NO 変換を行う
+                If mblnReadCompile Then
+                    'compare時は変換しない T.Ueki 2015/5/14
+                    If CompareRead = False Then
+                        intRtn += mConvChidToChno()
+                        .Value += 1 : Application.DoEvents()
+                    End If
+                End If
+
+                .Value = .Maximum
+
+                ''メッセージ表示
+                If intRtn <> 0 Then
+
+                    ''失敗
+                    lblMessage.Text = "Loading the file failed."
+                    lblMessage.ForeColor = Color.Red
+
+                    'ソフトウェア起動から一度でもファイルアクセスした場合  T.Ueki 2016/6/27
+                    FileAccessFlg = False
+
+                Else
+
+                    ''成功
+                    lblMessage.Text = "Loading the file succeeded."
+                    lblMessage.ForeColor = Color.Blue
+
+                    'ソフトウェア起動から一度でもファイルアクセスした場合  T.Ueki 2016/6/27
+                    FileAccessFlg = True
+
+                End If
+
+                Return intRtn
+
+            End With
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+            Return -1
+        End Try
+
+    End Function
     '--------------------------------------------------------------------
     ' 機能      : チャンネルID、チャンネルNo、システムNo変換
     ' 返り値    : なし
@@ -1520,15 +1851,15 @@
             Dim intFileNo As Integer
             Dim strPathSystem As String
             Dim strFullPath As String
-            Dim strFullPath2 As String
+            ' Dim strFullPath2 As String
             Dim strCurPathName As String = gCstPathSystem
             Dim strCurFileName As String = mGetOutputFileName(udtFileInfo, gCstFileSystem, mblnReadCompile)
 
-            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSystem, mblnReadCompile)
+            ' Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSystem, mblnReadCompile)
             ''メッセージ更新
             lblMessage.Text = "Loading " & strCurFileName : Call lblMessage.Refresh()
 
-            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+            '     lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
 
             ''システム設定のパスを作成
             strPathSystem = System.IO.Path.Combine(strPathBase, strCurPathName)
@@ -1536,14 +1867,11 @@
             ''フルパス作成
             strFullPath = System.IO.Path.Combine(strPathSystem, strCurFileName)
 
-            strFullPath2 = System.IO.Path.Combine(strPathSystem, strCurFileName2)
+            '    strFullPath2 = System.IO.Path.Combine(strPathSystem, strCurFileName2)
             ''ファイル存在確認
             If Not System.IO.File.Exists(strFullPath) Then
 
                 Call mAddMsgList("Load Error!! The file [" & strFullPath & "] doesn't exist.")
-                intRtn = -1
-
-                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
                 intRtn = -1
 
             Else
@@ -1562,6 +1890,80 @@
 
                 Catch ex As Exception
                     Call mAddMsgList("Load Error!! [" & strFullPath & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+#End Region
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のシステム設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) システム設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadSystem2(ByRef udtSetSystem As gTypSetSystem, _
+                                 ByVal udtFileInfo As gTypFileInfo, _
+                                 ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSystem As String
+            Dim strFullPath As String
+            Dim strFullPath2 As String
+            Dim strCurPathName As String = gCstPathSystem
+            Dim strCurFileName As String = mGetOutputFileName(udtFileInfo, gCstFileSystem, mblnReadCompile)
+
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSystem, mblnReadCompile)
+            ''メッセージ更新
+
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSystem = System.IO.Path.Combine(strPathBase, strCurPathName)
+
+            ''フルパス作成
+            ' strFullPath = System.IO.Path.Combine(strPathSystem, strCurFileName)
+
+            strFullPath2 = System.IO.Path.Combine(strPathSystem, strCurFileName2)
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetSystem)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
                     intRtn = -1
                 Finally
                     FileClose(intFileNo)
@@ -1728,6 +2130,73 @@
     End Function
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のＦＵチャンネル情報読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) チャンネル情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定読込処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadFuChannel2(ByRef udtSetFuChannel As gTypSetFu, _
+                                    ByVal udtFileInfo As gTypFileInfo, _
+                                    ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath As String
+            Dim strCurPathName As String = gCstPathFuChannel
+            Dim strCurFileName As String = mGetOutputFileName(udtFileInfo, gCstFileFuChannel, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName)
+
+            ''フルパス作成
+            strFullPath = System.IO.Path.Combine(strPathSave, strCurFileName)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetFuChannel)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 
 #Region "チャンネル情報データ"
 
@@ -7270,6 +7739,6 @@
     End Sub
 #End Region
 
-#End Region
+
 
 End Class
