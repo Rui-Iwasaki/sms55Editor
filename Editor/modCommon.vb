@@ -16,6 +16,8 @@ Module modCommon
         Dim strFileNameNew As String
 
         Dim strFileVersion As String
+        Dim strFileVersion2 As String
+
         Dim strFileVersionPrev As String
         Dim blnVersionUP As Boolean
 

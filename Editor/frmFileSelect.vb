@@ -431,6 +431,8 @@
 
                         ''新規の場合のフォルダ名   2013.11.29
                         mudtFileInfoTemp.strFileVersion = txtFileName.Text
+                        mudtFileInfoTemp.strFileVersion2 = txtFileName2.Text
+
                         mudtFileInfoTemp.strFileVersionPrev = ""
 
                         '▼▼▼ 20110705 NEW時iniファイルフォルダに保存してあるMainMenu.datを読み込む ▼▼▼▼▼▼▼▼▼
