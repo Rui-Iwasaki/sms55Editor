@@ -245,6 +245,16 @@
                         mintRtn = -1
                     End If
 
+                    If mLoadSetting2() = 0 Then
+
+                        ''読込処理成功時は自動で画面を閉じる
+                        mintRtn = 0
+                        Call Me.Close()
+
+                    Else
+                        mintRtn = -1
+                    End If
+
             End Select
 
             ''画面設定
@@ -1123,6 +1133,332 @@
 
     End Function
 
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のファイル設定値読み込み
+    ' 返り値    : 0:成功、<>0:失敗数
+    ' 引き数    : なし
+    ' 機能説明  : 設定値保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadSetting2() As Integer
+
+        Try
+
+            Dim fileNo As Integer = FreeFile()
+
+            Dim Fso As New Scripting.FileSystemObject
+            Dim intRtn As Integer
+            Dim strPathBase2 As String = ""
+            Dim strPathComp2 As String = ""
+            Dim strPathVerInfoPrev As String = ""
+            Dim strPathUpdateInfo As String = ""
+            Dim FromTempFolder2 As String = ""
+            Dim FromTempFolderCopy2 As String = ""
+            Dim ToTempFolder As String = ""
+
+            '読込完了までファイル未アクセス状態  T.Ueki 2016/6/27
+            FileAccessFlg = False
+
+            ''バージョン番号までのファイルパス作成
+            With mudtFileInfo
+
+                strPathBase2 = System.IO.Path.Combine(.strFilePath2, .strFileName2)
+
+                'T.Ueki ファイル管理仕様変更
+                'strPathBase = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersion), "000"))
+
+                'Mimic用データパスファイル作成
+                FileOpen(fileNo, AppPassTXT, OpenMode.Output)
+                PrintLine(fileNo, strPathBase2)
+                Print(fileNo, AppPass)
+                FileClose(fileNo)
+
+                If CompareRead = False Then
+
+                    'コピー先
+                    FromTempFolder2 = strPathBase2 & "\Temp\"
+                    FromTempFolderCopy2 = strPathBase2 & "\Temp"
+
+                    'コピー元
+                    ToTempFolder = strPathBase2 & "\Compile"
+
+                    ''Tempフォルダ内にCompileフォルダをコピー
+                    If System.IO.Directory.Exists(FromTempFolder2) Then
+                        'Tempフォルダが存在する場合は一端すべて削除
+                        System.IO.Directory.Delete(FromTempFolder2, True)
+
+                        'Tempフォルダを再作成
+                        System.IO.Directory.CreateDirectory(FromTempFolderCopy2)
+
+                        'Compileフォルダがある場合のみコピー  2013.08.07 K.Fujimoto
+                        If System.IO.Directory.Exists(ToTempFolder) Then
+                            Fso.CopyFolder(ToTempFolder, FromTempFolder2, True)
+                        End If
+                    Else
+                        'Tempフォルダが存在しない場合は作成
+                        System.IO.Directory.CreateDirectory(FromTempFolderCopy2)
+
+                        'Compileフォルダがある場合のみコピー  2013.08.07 K.Fujimoto
+                        If System.IO.Directory.Exists(ToTempFolder) Then
+                            Fso.CopyFolder(ToTempFolder, FromTempFolder2, True)
+                        End If
+                    End If
+
+                End If
+
+                strPathVerInfoPrev = System.IO.Path.Combine(System.IO.Path.Combine(strPathBase2, gCstFolderNameEditorInfo), gCstFolderNameVerInfoPre)
+                strPathUpdateInfo = System.IO.Path.Combine(System.IO.Path.Combine(strPathBase2, gCstFolderNameEditorInfo), gCstFolderNameUpdateInfo)
+
+                If mblnReadCompile Then
+                    '2014/5/14 T.Ueki
+                    If CompCFRead = True Then
+                        'CFｶｰﾄﾞからの読み込みはフォルダはそのまま
+                    Else
+                        strPathComp2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameCompile)
+                        strPathBase2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameCompile)
+                    End If
+
+                Else
+                    strPathComp2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameCompile)
+                    strPathBase2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameSave)
+                End If
+
+            End With
+
+
+            With prgBar
+
+                ''プログレスバー初期化
+                .Minimum = 0
+                .Maximum = mCstProgressValueMaxLoad
+                .Value = 0
+
+                '' Setup.iniﾌｧｲﾙ読み込み (最初に読み込む) 2018.12.13 倉重
+                ReadEditIni(strPathUpdateInfo & "\" & gCstIniFile)
+
+
+                ''mudt2.で呼ぶように変更
+
+
+
+                ''システム設定データ読み込み
+                intRtn += mLoadSystem2(mudt.SetSystem, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''FU チャンネル情報読み込み
+                intRtn += mLoadFuChannel2(mudt.SetFu, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''チャンネル情報データ（表示名設定データ）読み込み
+                intRtn += mLoadChDisp2(mudt.SetChDisp, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''チャンネル情報読み込み
+                intRtn += mLoadChannel2(mudt.SetChInfo, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''コンポジット情報読み込み
+                intRtn += mLoadComposite2(mudt.SetChComposite, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''グループ設定読み込み（植木）
+                intRtn += mLoadGroup2(mudt.SetChGroupSetM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadGroup2(mudt.SetChGroupSetC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''リポーズ入力設定読み込み
+                intRtn += mLoadRepose2(mudt.SetChGroupRepose, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''出力チャンネル設定読み込み
+                intRtn += mLoadOutPut2(mudt.SetChOutput, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''論理出力設定読み込み
+                intRtn += mLoadOrAnd2(mudt.SetChAndOr, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''積算データ設定読み込み
+                intRtn += mLoadChRunHour2(mudt.SetChRunHour, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''コントロール使用可／不可設定書き込み
+                intRtn += mLoadCtrlUseNotuse2(mudt.SetChCtrlUseM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadCtrlUseNotuse2(mudt.SetChCtrlUseC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''SIO設定読み込み
+                intRtn += mLoadChSio2(mudt.SetChSio, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''SIO設定CH設定読み込み
+                For i As Integer = 0 To UBound(mudt.SetChSioCh)
+                    intRtn += mLoadChSioCh2(mudt.SetChSioCh(i), mudtFileInfo, strPathBase2, i + 1) : .Value += 1 : Application.DoEvents()
+                Next
+
+                'Ver2.0.5.8
+                'SIO設定拡張読み込み ※プログレスバーにプラスはしない
+                For i As Integer = 0 To UBound(mudt.SetChSioExt)
+                    intRtn += mLoadChSioExt2(mudt.SetChSioExt(i), mudtFileInfo, strPathBase2, i + 1) : .Value += 0 : Application.DoEvents()
+                Next
+
+                ''排ガス処理演算設定読み込み
+                intRtn += mLoadexhGus2(mudt.SetChExhGus, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''延長警報設定読み込み
+                intRtn += mLoadExtAlarm2(mudt.SetExtAlarm, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''タイマ設定読み込み
+                intRtn += mLoadTimer2(mudt.SetExtTimerSet, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''タイマ表示名称設定読み込み
+                intRtn += mLoadTimerName2(mudt.SetExtTimerName, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''シーケンスID読み込み
+                intRtn += mLoadSeqSequenceID2(mudt.SetSeqID, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''シーケンス設定読み込み
+                intRtn += mLoadSeqSequenceSet2(mudt.SetSeqSet, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                'リニアライズテーブル読み込み
+                intRtn += mLoadSeqLinear2(mudt.SetSeqLinear, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                '演算式テーブル読み込み
+                intRtn += mLoadSeqOperationExpression2(mudt.SetSeqOpeExp, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''データ保存テーブル設定
+                intRtn += mLoadChDataSaveTable2(mudt.SetChDataSave, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''データ転送テーブル設定
+                intRtn += mLoadChDataForwardTableSet2(mudt.SetChDataForward, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''OPSスクリーンタイトルデータ読み込み
+                intRtn += mLoadOpsScreenTitle2(mudt.SetOpsScreenTitleM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsScreenTitle2(mudt.SetOpsScreenTitleC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''プルダウンメニュー
+                intRtn += mLoadManuMain2(mudt.SetOpsPulldownMenuM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadManuMain2(mudt.SetOpsPulldownMenuC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''セレクションメニュー
+                intRtn += mLoadSelectionMenu2(mudt.SetOpsSelectionMenuM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadSelectionMenu2(mudt.SetOpsSelectionMenuC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                ''OPSグラフ設定
+                intRtn += mLoadOpsGraph2(mudt.SetOpsGraphM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsGraph2(mudt.SetOpsGraphC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                '---------------------------------------------------------------------------
+                'フリーディスプレイとトレンドグラフは空データ出力なので読み込みは行わない
+                '---------------------------------------------------------------------------
+                '' ''フリーディスプレイ
+                ''intRtn += mLoadOpsFreeDisplay(mudt.SetOpsFreeDisplayM, mudtFileInfo, strPathBase, True) : .Value += 1: Application.DoEvents()
+                ''intRtn += mLoadOpsFreeDisplay(mudt.SetOpsFreeDisplayC, mudtFileInfo, strPathBase, False) : .Value += 1: Application.DoEvents()
+
+                '' ''トレンドグラフ
+                ''intRtn += mSaveOpsTrendGraph(mudt.SetOpsTrendGraphM, mudtFileInfo, strPathBase, True) : .Value += 1: Application.DoEvents()
+                ''intRtn += mSaveOpsTrendGraph(mudt.SetOpsTrendGraphC, mudtFileInfo, strPathBase, False) : .Value += 1: Application.DoEvents()
+
+                'PID
+                intRtn += mLoadOpsTrendGraph_PID2(mudt.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsTrendGraph_PID2(mudt.SetOpsTrendGraphPIDprev, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+
+                ''2014/5/14 コンパイル比較の場合は読み込まない　T.Ueki
+                If mblnReadCompile = False Then
+                    ''ログフォーマット
+                    intRtn += mLoadOpsLogFormat2(mudt.SetOpsLogFormatM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                    intRtn += mLoadOpsLogFormat2(mudt.SetOpsLogFormatC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                End If
+
+                ''ログフォーマットCHID 　☆2012/10/26 K.Tanigawa
+                intRtn += mLoadOpsLogIdData2(mudt.SetOpsLogIdDataM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsLogIdData2(mudt.SetOpsLogIdDataC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+
+                '' Ver1.9.3 2016.01.25 ﾛｸﾞｵﾌﾟｼｮﾝ設定追加
+                intRtn += mLoadOpsLogOption2(mudt.SetOpsLogOption, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''GWS設定CH設定読み込み 2014.02.04
+                intRtn += mLoadopsGwsCh2(mudt.SetOpsGwsCh, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+
+                ''CH変換テーブル
+                If mblnVersionUP Then
+
+                    '==============================
+                    ''バージョンアップの場合
+                    '==============================
+                    ''コンパイルファイル読み込みの場合
+                    If mblnReadCompile = False Then
+
+                        ''バージョンアップ前のコンパイルフォルダから読み込む
+                        intRtn += mLoadChConv2(mudt.SetChConvPrev, mudtFileInfo, strPathComp2)
+
+                    Else
+
+                        ''バージョンアップ前のSaveフォルダから読み込む
+                        intRtn += mLoadChConv2(mudt.SetChConvPrev, mudtFileInfo, strPathBase2)
+
+                    End If
+
+                    ''現VerのCH変換テーブルを初期化する
+                    Call gInitSetChConv(mudt.SetChConvNow)
+
+                Else
+
+                    '==============================
+                    ''バージョンアップではない場合
+                    '==============================
+                    ''コンパイルファイル読み込みの場合
+                    If mblnReadCompile = False Then
+                        ''前バージョンのCH変換テーブルをVerInfoPrevフォルダから読み込む
+                        intRtn += mLoadChConv2(mudt.SetChConvPrev, mudtFileInfo, strPathVerInfoPrev)
+                    Else
+
+                        ''現バージョンのCH変換テーブルをSaveフォルダから読み込む
+                        'intRtn += mLoadChConv(mudt.SetChConvNow, mudtFileInfo, strPathBase)
+                        intRtn += mLoadChConv2(mudt.SetChConvPrev, mudtFileInfo, strPathBase2)
+                    End If
+
+                End If
+
+                .Value += 1 : Application.DoEvents()
+
+                ''コンパイルファイル読み込みの場合
+                If mblnReadCompile = False Then
+                    ''ファイル更新情報
+                    intRtn += mLoadEditorUpdateInfo2(mudt.SetEditorUpdateInfo, mudtFileInfo, strPathUpdateInfo) : .Value += 1 : Application.DoEvents()
+                End If
+
+                ''コンパイルファイル読み込み時はチャンネル ID - NO 変換を行う
+                If mblnReadCompile Then
+                    'compare時は変換しない T.Ueki 2015/5/14
+                    If CompareRead = False Then
+                        intRtn += mConvChidToChno()
+                        .Value += 1 : Application.DoEvents()
+                    End If
+                End If
+
+                .Value = .Maximum
+
+                ''メッセージ表示
+                If intRtn <> 0 Then
+
+                    ''失敗
+                    lblMessage.Text = "Loading the file failed."
+                    lblMessage.ForeColor = Color.Red
+
+                    'ソフトウェア起動から一度でもファイルアクセスした場合  T.Ueki 2016/6/27
+                    FileAccessFlg = False
+
+                Else
+
+                    ''成功
+                    lblMessage.Text = "Loading the file succeeded."
+                    lblMessage.ForeColor = Color.Blue
+
+                    'ソフトウェア起動から一度でもファイルアクセスした場合  T.Ueki 2016/6/27
+                    FileAccessFlg = True
+
+                End If
+
+                Return intRtn
+
+            End With
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+            Return -1
+        End Try
+
+    End Function
     '--------------------------------------------------------------------
     ' 機能      : チャンネルID、チャンネルNo、システムNo変換
     ' 返り値    : なし
@@ -1294,6 +1630,53 @@
 
 #End Region
 
+#Region "2つ目の出力ファイル名取得"
+
+    '--------------------------------------------------------------------
+    ' 機能      : 出力ファイル名取得
+    ' 返り値    : 出力ファイル名取得
+    ' 引き数    : ARG1 - (I ) ファイル情報構造体
+    ' 　　　    : ARG2 - (I ) 基本ファイル名
+    ' 機能説明  : [ファイル名]_[バージョン番号]_[基本ファイル名]を作成して返す
+    '--------------------------------------------------------------------
+    Private Function mGetOutputFileName2(ByVal udtFileInfo As gTypFileInfo, _
+                                        ByVal strFileName2 As String, _
+                                        ByVal blnReadCompile As Boolean) As String
+
+        Dim strRtn As String = ""
+
+        Try
+
+            If blnReadCompile Then
+
+                strRtn = strFileName2
+
+            Else
+                'バージョンアップならアップ後の名称を使用する T.Ueki
+                If udtFileInfo.blnVersionUP = True Then
+                    strRtn = udtFileInfo.strFileVersion2 & "_" & strFileName2
+                Else
+                    'ファイル管理仕様変更
+                    strRtn = udtFileInfo.strFileName2 & "_" & strFileName2
+                End If
+
+                'strRtn = udtFileInfo.strFileName & "_" & _
+                '         Format(CInt(udtFileInfo.strFileVersion), "000") & "_" & _
+                '         strFileName
+
+            End If
+
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+        Return strRtn
+
+    End Function
+
+#End Region
+
 #Region "チャンネル設定ファイルの可変長出力対応"
 
     Private Sub mRemakeChannelFileLoad(ByRef strFullPath As String)
@@ -1366,6 +1749,7 @@
 
 #End Region
 
+
 #Region "ファイル入出力関数"
 
 #Region "システム設定"
@@ -1391,13 +1775,15 @@
             Dim strFullPath As String
             Dim strCurPathName As String = gCstPathSystem
             Dim strCurFileName As String = mGetOutputFileName(udtFileInfo, gCstFileSystem, mblnReadCompile)
-
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSystem, mblnReadCompile)
             ''メッセージ更新
             lblMessage.Text = "saving " & strCurFileName : Call lblMessage.Refresh()
 
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
             ''保存パスを作成
             strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName)
             strFullPath = System.IO.Path.Combine(strPathSave, strCurFileName)
+
 
             'Ver2.0.7.B 無関係なファイルを削除する
             Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileSystem)
@@ -1470,11 +1856,15 @@
             Dim intFileNo As Integer
             Dim strPathSystem As String
             Dim strFullPath As String
+            ' Dim strFullPath2 As String
             Dim strCurPathName As String = gCstPathSystem
             Dim strCurFileName As String = mGetOutputFileName(udtFileInfo, gCstFileSystem, mblnReadCompile)
 
+            ' Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSystem, mblnReadCompile)
             ''メッセージ更新
             lblMessage.Text = "Loading " & strCurFileName : Call lblMessage.Refresh()
+
+            '     lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
 
             ''システム設定のパスを作成
             strPathSystem = System.IO.Path.Combine(strPathBase, strCurPathName)
@@ -1482,6 +1872,7 @@
             ''フルパス作成
             strFullPath = System.IO.Path.Combine(strPathSystem, strCurFileName)
 
+            '    strFullPath2 = System.IO.Path.Combine(strPathSystem, strCurFileName2)
             ''ファイル存在確認
             If Not System.IO.File.Exists(strFullPath) Then
 
@@ -1504,6 +1895,80 @@
 
                 Catch ex As Exception
                     Call mAddMsgList("Load Error!! [" & strFullPath & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+#End Region
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のシステム設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) システム設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadSystem2(ByRef udtSetSystem As gTypSetSystem, _
+                                 ByVal udtFileInfo As gTypFileInfo, _
+                                 ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSystem As String
+            '   Dim strFullPath As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSystem
+            '   Dim strCurFileName As String = mGetOutputFileName(udtFileInfo, gCstFileSystem, mblnReadCompile)
+
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSystem, mblnReadCompile)
+            ''メッセージ更新
+
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSystem = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            ' strFullPath = System.IO.Path.Combine(strPathSystem, strCurFileName)
+
+            strFullPath2 = System.IO.Path.Combine(strPathSystem, strCurFileName2)
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetSystem)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
                     intRtn = -1
                 Finally
                     FileClose(intFileNo)
@@ -1671,6 +2136,73 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のＦＵチャンネル情報読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) チャンネル情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定読込処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadFuChannel2(ByRef udtSetFuChannel As gTypSetFu, _
+                                    ByVal udtFileInfo As gTypFileInfo, _
+                                    ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathFuChannel
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileFuChannel, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetFuChannel)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
 #Region "チャンネル情報データ"
 
     '--------------------------------------------------------------------
@@ -1820,6 +2352,72 @@
     End Function
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のチャンネル情報データ読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) チャンネル情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定読込処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadChDisp2(ByRef udtSetFuChannel As gTypSetChDisp, _
+                                 ByVal udtFileInfo As gTypFileInfo, _
+                                 ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChDisp
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileChDisp, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetFuChannel)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "チャンネル情報"
 
@@ -1998,6 +2596,98 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のチャンネル情報読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) チャンネル情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定読込処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadChannel2(ByRef udtSetChannel As gTypSetChInfo, _
+                                  ByVal udtFileInfo As gTypFileInfo, _
+                                  ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChannel
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileChannel, mblnReadCompile)
+
+            Dim strBkUpFullPath As String = ""
+
+            'Ver2.0.3.6 Excel取込の場合、読み込むファイルを変更
+            If gblExcelInDo = True Then
+                strCurFileName2 = mGetOutputFileName(udtFileInfo, "ex_" & gCstFileChannel, mblnReadCompile)
+            End If
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+            strBkUpFullPath = strFullPath2
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                '▼▼▼ 20110214 チャンネル設定ファイルの可変長出力対応 ▼▼▼▼▼▼▼▼▼
+                If mblnReadCompile Then
+                    ''構造体読み用のファイルを作成する
+                    Call mRemakeChannelFileLoad(strFullPath2)
+                End If
+                '▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetChannel)
+                    FileClose(intFileNo)
+
+                    '▼▼▼ 20110214 チャンネル設定ファイルの可変長出力対応 ▼▼▼▼▼▼▼▼▼
+                    If mblnReadCompile Then
+                        ''構造体読み用に作成されたファイルを削除する
+                        Call System.IO.File.Delete(strFullPath2)
+                    End If
+                    '▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+                    'Ver2.0.3.6 Excel取込の場合、読み込んだファイルを削除
+                    If gblExcelInDo = True Then
+                        Call System.IO.File.Delete(strBkUpFullPath)
+                    End If
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "コンポジット情報"
 
     '--------------------------------------------------------------------
@@ -2148,6 +2838,73 @@
 
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のコンポジット情報読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) コンポジット情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定読込処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadComposite2(ByRef udtSetComposite As gTypSetChComposite, _
+                                    ByVal udtFileInfo As gTypFileInfo, _
+                                    ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathComposite
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileComposite, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetComposite)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 
 #Region "グループ設定"
 
@@ -2302,6 +3059,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のグループ設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) グループ設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定読込処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadGroup2(ByRef udtSetGroup As gTypSetChGroupSet, _
+                                ByVal udtFileInfo As gTypFileInfo, _
+                                ByVal strPathBase As String, _
+                                ByVal blnMachinery As Boolean) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathGroup
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, IIf(blnMachinery, gCstFileGroupM, gCstFileGroupC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetGroup)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 #Region "リポーズ入力設定"
 
     '--------------------------------------------------------------------
@@ -2523,6 +3346,105 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のリポーズ入力設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) リポーズ入力設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : リポーズ入力設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadRepose2(ByRef udtSetGroupRepose As gTypSetChGroupRepose, _
+                                 ByVal udtFileInfo As gTypFileInfo, _
+                                 ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathRepose
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileRepose, mblnReadCompile)
+            Dim udt48 As gTypSetChGroupRepose48 = Nothing ''2018.12.13 倉重 グループリポーズが48の場合に使用する配列
+            Dim intListRow As Integer = 0       ''2018.12.13 倉重 カウンタ変数
+            Dim intListDetailRow As Integer = 0 ''2018.12.13 倉重 カウンタ変数
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    ''ADDのチェックボックスがチェックでない場合に格納する2018.12.13 倉重
+                    If g_bytGREPNUM = 0 Then
+                        udt48.InitArray()
+                        FileGet(intFileNo, udt48)
+
+                        ''ヘッダの読み込み
+                        udtSetGroupRepose.udtHeader.strVersion = udt48.udtHeader.strVersion
+                        udtSetGroupRepose.udtHeader.strDate = udt48.udtHeader.strDate
+                        udtSetGroupRepose.udtHeader.strTime = udt48.udtHeader.strTime
+                        udtSetGroupRepose.udtHeader.shtRecs = udt48.udtHeader.shtRecs
+                        udtSetGroupRepose.udtHeader.shtSize1 = udt48.udtHeader.shtSize1
+                        udtSetGroupRepose.udtHeader.shtSize2 = udt48.udtHeader.shtSize2
+                        udtSetGroupRepose.udtHeader.shtSize3 = udt48.udtHeader.shtSize3
+                        udtSetGroupRepose.udtHeader.shtSize4 = udt48.udtHeader.shtSize4
+                        udtSetGroupRepose.udtHeader.shtSize5 = udt48.udtHeader.shtSize5
+
+                        ''リポーズデータの読み込み
+                        For intListRow = LBound(udt48.udtRepose) To UBound(udt48.udtRepose)
+                            ''CH ID
+                            udtSetGroupRepose.udtRepose(intListRow).shtChId = udt48.udtRepose(intListRow).shtChId
+                            ''データ種別コード
+                            udtSetGroupRepose.udtRepose(intListRow).shtData = udt48.udtRepose(intListRow).shtData
+                            For intListDetailRow = 0 To UBound(udt48.udtRepose(intListRow).udtReposeInf)
+                                ''CH ID
+                                udtSetGroupRepose.udtRepose(intListRow).udtReposeInf(intListDetailRow).shtChId = udt48.udtRepose(intListRow).udtReposeInf(intListDetailRow).shtChId
+                                ''マスク値
+                                udtSetGroupRepose.udtRepose(intListRow).udtReposeInf(intListDetailRow).bytMask = udt48.udtRepose(intListRow).udtReposeInf(intListDetailRow).bytMask
+                            Next
+                        Next
+                    Else
+                        FileGet(intFileNo, udtSetGroupRepose)
+                    End If
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "出力チャンネル設定"
 
     '--------------------------------------------------------------------
@@ -2674,6 +3596,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目の出力チャンネル設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) 出力チャンネル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 出力チャンネル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadOutPut2(ByRef udtSetCHOutPut As gTypSetChOutput, _
+                                ByVal udtFileInfo As gTypFileInfo, _
+                                ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOutPut
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileOutPut, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetCHOutPut)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 #Region "論理出力設定"
 
     '--------------------------------------------------------------------
@@ -2824,6 +3812,72 @@
     End Function
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      :2つ目の論理出力設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) 論理出力設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 論理出力設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadOrAnd2(ByRef udtSetCHAndOr As gTypSetChAndOr, _
+                                ByVal udtFileInfo As gTypFileInfo, _
+                                ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath As String
+            Dim strCurPathName As String = gCstPathOrAnd
+            Dim strCurFileName As String = mGetOutputFileName2(udtFileInfo, gCstFileOrAnd, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName)
+
+            ''フルパス作成
+            strFullPath = System.IO.Path.Combine(strPathSave, strCurFileName)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetCHAndOr)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "積算データ設定"
 
@@ -2976,6 +4030,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      :2つ目の積算データ設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) 積算データ設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 積算データ設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadChRunHour2(ByRef udtSetChRunHour As gTypSetChRunHour, _
+                                ByVal udtFileInfo As gTypFileInfo, _
+                                ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChAdd
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileChAdd, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetChRunHour)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "排ガス処理演算設定"
 
     '--------------------------------------------------------------------
@@ -3110,6 +4230,72 @@
 
                 Catch ex As Exception
                     Call mAddMsgList("Load Error!! [" & strFullPath & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目の排ガス処理演算設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) 排ガス処理演算設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 排ガス処理演算設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadexhGus2(ByRef udtSetExhGus As gTypSetChExhGus, _
+                                 ByVal udtFileInfo As gTypFileInfo, _
+                                 ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathExhGus
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileExhGus, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetExhGus)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
                     intRtn = -1
                 Finally
                     FileClose(intFileNo)
@@ -3313,6 +4499,107 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のコントロール使用可／不可設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) コントロール使用可／不可設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : コントロール使用可／不可設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadCtrlUseNotuse2(ByRef udtSetTimer As gTypSetChCtrlUse, _
+                                        ByVal udtFileInfo As gTypFileInfo, _
+                                        ByVal strPathBase As String, _
+                                        ByVal blnMachinery As Boolean) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathCtrlUseNouse
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, IIf(blnMachinery, gCstFileCtrlUseNouseM, gCstFileCtrlUseNouseC), mblnReadCompile)
+            Dim bFileFg As Boolean      '' Ver1.9.7 2016.02.17 追加
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+                '' Ver1.9.7 2016.02.17 関数に変更
+                bFileFg = SaveTempCtrlUseNotUseFile(strFullPath2, strPathBase, strCurFileName2, 1)
+                '' Ver1.9.6 2016.02.17 ﾌｧｲﾙｻｲｽﾞ拡張のため、ﾌｧｲﾙｻｲｽﾞが旧ﾀｲﾌﾟならばﾃﾞｰﾀを追加して保存
+                ''Dim fs As New System.IO.FileStream(strFullPath, System.IO.FileMode.Open, IO.FileAccess.ReadWrite)
+                ''Dim nLength As Long = fs.Length
+
+                ''If nLength = gOldUseNotUseFileSize Then
+
+                ''    Dim strTemp As String = strPathBase & "\Temp"
+                ''    If System.IO.Directory.Exists(strTemp) Then
+
+                ''    End If
+
+                ''    Dim os(gAmxControlUseNotUse - 1) As Byte
+                ''    Dim ns((gAmxControlUseNotUse - 32) * 326 - 1) As Byte
+                ''    fs.Read(os, 0, gAmxControlUseNotUse)
+                ''    fs.Close()
+
+
+                ''    ''fs.Write(ns, 0, ns.Length)
+                ''    ''fs.Seek(0, IO.SeekOrigin.End)
+                ''    ''fs.Write(ns, 0, ns.Length)
+                ''    ''fs.Close()
+
+                ''End If
+                ''//
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetTimer)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+
+                    '' Ver1.9.7 2016.02.17  ﾌｧｲﾙ削除
+                    If (bFileFg) Then
+                        Kill(strFullPath2)
+                    End If
+                    ''//
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
 #Region "SIO設定"
 
     '--------------------------------------------------------------------
@@ -3463,6 +4750,72 @@
     End Function
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のSIO設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) SIO設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : SIO設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadChSio2(ByRef udtSetSio As gTypSetChSio, _
+                                ByVal udtFileInfo As gTypFileInfo, _
+                                ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChSio
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileChSio, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetSio)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "SIO設定CH設定"
 
@@ -3615,6 +4968,73 @@
     End Function
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のSIO設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) SIO設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : SIO設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadChSioCh2(ByRef udtSetSioCh As gTypSetChSioCh, _
+                                  ByVal udtFileInfo As gTypFileInfo, _
+                                  ByVal strPathBase As String, _
+                                  ByVal intPortNo As Integer) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChSioCh
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileChSioChName, mblnReadCompile) & Format(intPortNo, "00") & gCstFileChSioChExt
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetSioCh)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "SIO設定拡張設定"
     '--------------------------------------------------------------------
@@ -3771,6 +5191,71 @@
     End Function
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のSIO設定拡張設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) SIO設定拡張設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : SIO設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadChSioExt2(ByRef udtSetSioExt As gTypSetChSioExt, _
+                                  ByVal udtFileInfo As gTypFileInfo, _
+                                  ByVal strPathBase As String, _
+                                  ByVal intPortNo As Integer) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChSioExt
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileChSioExtName, mblnReadCompile) & Format(intPortNo, "00") & gCstFileChSioExtExt
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+                'ファイルが存在しない場合は読み飛ばし
+                'Call mAddMsgList("Load Error!! The file [" & strFullPath & "] doesn't exist.")
+                intRtn = 0
+            Else
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetSioExt)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "延長警報設定"
 
     '--------------------------------------------------------------------
@@ -3922,6 +5407,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目の延長警報設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) 延長警報設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 延長警報設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadExtAlarm2(ByRef udtSetExAlm As gTypSetExtAlarm, _
+                                   ByVal udtFileInfo As gTypFileInfo, _
+                                   ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathExtAlarm
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileExtAlarm, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetExAlm)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "タイマ設定"
 
     '--------------------------------------------------------------------
@@ -4072,6 +5623,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のタイマ設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) タイマ設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : タイマ設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadTimer2(ByRef udtSetTimer As gTypSetExtTimerSet, _
+                                ByVal udtFileInfo As gTypFileInfo, _
+                                ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathTimer
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileTimer, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetTimer)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "タイマ表示名称設定"
 
     '--------------------------------------------------------------------
@@ -4221,6 +5838,71 @@
     End Function
 
 #End Region
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のタイマ表示名称設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) タイマ表示名称設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : タイマ表示名称設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadTimerName2(ByRef udtSetTimerName As gTypSetExtTimerName, _
+                                    ByVal udtFileInfo As gTypFileInfo, _
+                                    ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathTimerName
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileTimerName, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetTimerName)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "シーケンスID"
 
@@ -4372,6 +6054,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のシーケンスID読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) シーケンスID構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  :シーケンスID保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadSeqSequenceID2(ByRef udtSetSeqSequenceID As gTypSetSeqID, _
+                                        ByVal udtFileInfo As gTypFileInfo, _
+                                        ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSeqSequenceID
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSeqSequenceID, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetSeqSequenceID)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "シーケンス設定"
 
     '--------------------------------------------------------------------
@@ -4521,6 +6269,74 @@
     End Function
 
 #End Region
+
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のシーケンス設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) シーケンス設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  :シーケンス設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadSeqSequenceSet2(ByRef udtSetSeqSequenceSet As gTypSetSeqSet, _
+                                         ByVal udtFileInfo As gTypFileInfo, _
+                                         ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSeqSequenceSet
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSeqSequenceSet, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetSeqSequenceSet)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "リニアライズテーブル設定"
 
@@ -4672,6 +6488,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のリニアライズテーブル設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) リニアライズテーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : リニアライズテーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadSeqLinear2(ByRef udtSetSeqLinear As gTypSetSeqLinear, _
+                                    ByVal udtFileInfo As gTypFileInfo, _
+                                    ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSeqLinear
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSeqLinear, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetSeqLinear)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "演算式テーブル設定"
 
     '--------------------------------------------------------------------
@@ -4821,6 +6703,72 @@
     End Function
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目の演算式テーブル設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) 演算式テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 演算式テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadSeqOperationExpression2(ByRef udtSetSeqOpeExp As gTypSetSeqOperationExpression, _
+                                                 ByVal udtFileInfo As gTypFileInfo, _
+                                                 ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSeqOperationExpression
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSeqOperationExpression, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetSeqOpeExp)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "データ保存テーブル設定"
 
@@ -4972,6 +6920,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のデータ保存テーブル設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) データ保存テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : データ保存テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadChDataSaveTable2(ByRef udtSetChDataSaveTable As gTypSetChDataSave, _
+                                    ByVal udtFileInfo As gTypFileInfo, _
+                                    ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChDataSaveTable
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileChDataSaveTable, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetChDataSaveTable)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "データ転送テーブル設定"
 
     '--------------------------------------------------------------------
@@ -5121,6 +7135,72 @@
     End Function
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のデータ転送テーブル設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) データ転送テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : データ転送テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadChDataForwardTableSet2(ByRef udtSetChDataForwardTableSet As gTypSetChDataForward, _
+                                    ByVal udtFileInfo As gTypFileInfo, _
+                                    ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChDataForwardTableSet
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileChDataForwardTableSet, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetChDataForwardTableSet)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "OPSスクリーンタイトル"
 
@@ -5280,6 +7360,74 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のOPSスクリーンタイトル読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) OPSスクリーンタイトル構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadOpsScreenTitle2(ByRef udtSetOpsScreenTitle As gTypSetOpsScreenTitle, _
+                                         ByVal udtFileInfo As gTypFileInfo, _
+                                         ByVal strPathBase As String, _
+                                         ByVal blnMachinery As Boolean) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsScreenTitle
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, IIf(blnMachinery, gCstFileOpsScreenTitleM, gCstFileOpsScreenTitleC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetOpsScreenTitle)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
 #Region "プルダウンメニュー"
 
     '--------------------------------------------------------------------
@@ -5433,6 +7581,73 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のデータ転送テーブル設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) データ転送テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : データ転送テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadManuMain2(ByRef udtManuMain As gTypSetOpsPulldownMenu, _
+                                   ByVal udtFileInfo As gTypFileInfo, _
+                                   ByVal strPathBase As String, _
+                                   ByVal blnMachinery As Boolean) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsPulldownMenu
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, IIf(blnMachinery, gCstFileOpsPulldownMenuM, gCstFileOpsPulldownMenuC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtManuMain)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "セレクションメニュー"
 
     '--------------------------------------------------------------------
@@ -5585,6 +7800,73 @@
     End Function
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のセレクション設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) データ転送テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : データ転送テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadSelectionMenu2(ByRef udtSelectionMenu As gTypSetOpsSelectionMenu, _
+                                   ByVal udtFileInfo As gTypFileInfo, _
+                                   ByVal strPathBase As String, _
+                                   ByVal blnMachinery As Boolean) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsSelectionMenu
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, IIf(blnMachinery, gCstFileOpsSelectionMenuM, gCstFileOpsSelectionMenuC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSelectionMenu)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "OPSグラフ設定"
 
@@ -5740,6 +8022,73 @@
 
 #End Region
 
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のOPSグラフ設定読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) OPSグラフ設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : OPSグラフ設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadOpsGraph2(ByRef udtOpsGraph As gTypSetOpsGraph, _
+                                   ByVal udtFileInfo As gTypFileInfo, _
+                                   ByVal strPathBase As String, _
+                                   ByVal blnMachinery As Boolean) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsGraph
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, IIf(blnMachinery, gCstFileOpsGraphM, gCstFileOpsGraphC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtOpsGraph)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "フリーグラフ"
 
@@ -6292,6 +8641,79 @@
 
 #End Region
 
+    '2つ目のPID専用
+    Private Function mLoadOpsTrendGraph_PID2(ByRef udtManuMain As gTypSetOpsTrendGraph, _
+                                        ByVal udtFileInfo As gTypFileInfo, _
+                                        ByVal strPathBase As String, _
+                                        ByVal blnMachinery As Boolean) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsTrendGraph
+            Dim strCurFileName2 As String = ""
+            If blnMachinery = True Then
+                strCurFileName2 = mGetOutputFileName2(udtFileInfo, gCstFileOpsTrendGraphPID, mblnReadCompile)
+            Else
+                strCurFileName2 = mGetOutputFileName2(udtFileInfo, gCstFileOpsTrendGraphPID2, mblnReadCompile)
+            End If
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+                'PID用ファイルは、途中から加わったファイルのため、存在しない場合は新規生成
+                'Call mAddMsgList("Load Error!! The file [" & strFullPath & "] doesn't exist.")
+                'intRtn = -1
+                Call gInitSetOpsTrendGraph(udtManuMain)
+                Call gInitSetOpsTrendGraph(gudt.SetOpsTrendGraphPIDprev)
+                mudt.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphPID = 1
+
+                'Ver2.0.7.T コメントアウト
+                'gblExcelInDo = True
+
+                'メッセージ出力
+                Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtManuMain)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "ログフォーマット"
 
     '--------------------------------------------------------------------
@@ -6444,6 +8866,73 @@
     End Function
 
 #End Region
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のログフォーマット読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) ログフォーマット構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : ログフォーマット保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadOpsLogFormat2(ByRef udtSetOpsLogFormat As gTypSetOpsLogFormat, _
+                                       ByVal udtFileInfo As gTypFileInfo, _
+                                       ByVal strPathBase As String, _
+                                       ByVal blnMachinery As Boolean) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsLogFormat
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, IIf(blnMachinery, gCstFileOpsLogFormatM, gCstFileOpsLogFormatC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetOpsLogFormat)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "ログフォーマットCHID"
 
@@ -6602,6 +9091,76 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のログフォーマットCHID読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) ログフォーマット構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : ログフォーマット保存処理を行う
+    ' ☆2012/10/26 K.Tanigawa
+    '--------------------------------------------------------------------
+    Private Function mLoadOpsLogIdData2(ByRef udtSetOpsLogIdData As gTypSetOpsLogIdData, _
+                                       ByVal udtFileInfo As gTypFileInfo, _
+                                       ByVal strPathBase As String, _
+                                       ByVal blnMachinery As Boolean) As Integer
+
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsLogIdData
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, IIf(blnMachinery, gCstFileOpsLogIdDataM, gCstFileOpsLogIdDataC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''  ☆2012/10/26 K.Tanigawa
+                ' ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetOpsLogIdData)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
 #Region "ログオプション"
 
     '--------------------------------------------------------------------
@@ -6749,6 +9308,69 @@
     End Function
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のログフォーマット読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) ﾛｸﾞｵﾌﾟｼｮﾝ設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : ログオプション設定データ読み込み処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadOpsLogOption2(ByRef udtSetOpsLogOption As gTypLogOption, _
+                                       ByVal udtFileInfo As gTypFileInfo, _
+                                       ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsLogFormat
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileOpsLogOption, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+                '' ﾌｧｲﾙが存在しない場合でもｴﾗｰにはしない
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetOpsLogOption)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 #Region "GWS設定CH設定"     '' 2014.02.04
 
     '--------------------------------------------------------------------
@@ -6899,6 +9521,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のGWS設定読込     2014.02.04
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) SIO設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : SIO設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadopsGwsCh2(ByRef udtSetGwsCh As gTypSetOpsGwsCh, _
+                                  ByVal udtFileInfo As gTypFileInfo, _
+                                  ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsGwsCh
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileOpsGwsChName, mblnReadCompile) & gCstFileOpsGwsChExt
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetGwsCh)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 
 #Region "CH変換テーブル"
 
@@ -7048,6 +9736,72 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のCH変換テーブル読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) CH変換テーブル構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : CH変換テーブル保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadChConv2(ByRef udtSetChConv As gTypSetChConv, _
+                                 ByVal udtFileInfo As gTypFileInfo, _
+                                 ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChConv
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileChConv, True)
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+                'Ver2.0.2.0 メッセージ出さない
+                'Call mAddMsgList("Load Error!! The file [" & strFullPath & "] doesn't exist.")
+                'intRtn = -1
+                intRtn = 0
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetChConv)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 #Region "ファイル更新情報"
 
     '--------------------------------------------------------------------
@@ -7185,6 +9939,71 @@
 
 #End Region
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のファイル更新情報読込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - ( O) ファイル更新情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : ファイル更新情報保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mLoadEditorUpdateInfo2(ByRef udtSetEditorUpdateInfo As gTypSetEditorUpdateInfo, _
+                                           ByVal udtFileInfo As gTypFileInfo, _
+                                           ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathEditorUpdateInfo
+            Dim strCurFileName2 As String = gCstFileEditorUpdateInfo
+
+            ''メッセージ更新
+            lblMessage.Text = "Loading " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''システム設定のパスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+
+            ''フルパス作成
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''ファイル存在確認
+            If Not System.IO.File.Exists(strFullPath2) Then
+
+                Call mAddMsgList("Load Error!! The file [" & strFullPath2 & "] doesn't exist.")
+                intRtn = -1
+
+            Else
+
+                ''ファイルオープン
+                intFileNo = FreeFile()
+                FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Read, OpenShare.Shared)
+
+                Try
+                    ''ファイル読込み
+                    FileGet(intFileNo, udtSetEditorUpdateInfo)
+
+                    ''メッセージ出力
+                    Call mAddMsgList("Load complete. [" & strFullPath2 & "]")
+
+                Catch ex As Exception
+                    Call mAddMsgList("Load Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                    intRtn = -1
+                Finally
+                    FileClose(intFileNo)
+                End Try
+
+            End If
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
 #Region "無関係なファイルをみつけて削除する"
     Private Sub subDelNoShipFile(ByVal udtFileInfo As gTypFileInfo, ByVal strPath As String, ByVal strFileName As String)
@@ -7212,6 +10031,6 @@
     End Sub
 #End Region
 
-#End Region
+
 
 End Class
