@@ -11,13 +11,14 @@
     Private mintRtn As Integer
     Private mudtFileInfo As gTypCompareFileInfo
     Private mudt As clsStructure
+    Private mudt2 As clsStructure
 
     Private mblnCFRead As Boolean
     Private mblnSaveRead As Boolean
     Private mblnCompileRead As Boolean
     Private mblnCForgRead As Boolean
 
-    Private mudt2 As clsStructure
+
 
 #End Region
 

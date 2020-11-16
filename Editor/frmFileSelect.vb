@@ -7,6 +7,7 @@
     Private mudtFileInfoSave As gTypFileInfo
     Private mudtFileInfoTemp As gTypFileInfo
     Private mudt As clsStructure
+    Private mudt2 As clsStructure
     Private mblnUseVersionUP As Boolean
 
     '2014/5/14 T.Ueki
@@ -539,7 +540,7 @@
 
 
                         ''各設定ファイルから設定値を読み込み構造体に設定
-                        intRtn = frmFileAccess.gShow(mudtFileInfoTemp, gEnmAccessMode.amLoad, chkCompile.Checked, False, chkVersionUP.Checked, mudt, CFReadFlg, CompareSet)
+                        intRtn = frmFileAccess.gShow(mudtFileInfoTemp, gEnmAccessMode.amLoad, chkCompile.Checked, False, chkVersionUP.Checked, mudt, mudt2, CFReadFlg, CompareSet)
 
                         ''読み込み成功の場合は 1 、読み込み失敗の場合は -1 を戻り値に設定する
                         intRtn = IIf(intRtn = 0, 1, -1)

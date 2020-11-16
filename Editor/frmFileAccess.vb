@@ -15,12 +15,13 @@
     Private mudtAccessMode As gEnmAccessMode
     Private mblnExit As Boolean
     Private mblnVersionUP As Boolean
+    Private mudt2 As clsStructure
     Private mudt As clsStructure
 
     Private CompCFRead As Boolean
     Private CompareRead As Boolean
 
-    Private mudt2 As clsStructure
+
 
 #End Region
 
@@ -40,6 +41,7 @@
                           ByVal blnExit As Boolean, _
                           ByVal blnVersionUP As Boolean, _
                           ByRef udt As clsStructure, _
+                          ByRef udt2 As clsStructure, _
                           ByVal CompCFReadFlg As Boolean, _
                           ByVal CompareReadFlg As Boolean) As Integer
 
@@ -56,6 +58,7 @@
             mblnExit = blnExit
             mblnVersionUP = blnVersionUP
             mudt = udt
+            mudt2 = udt
             CompCFRead = CompCFReadFlg
             CompareRead = CompareReadFlg
 
@@ -64,6 +67,7 @@
 
             ''戻り値設定
             udt = mudt
+            udt2 = mudt2
             Return mintRtn
 
         Catch ex As Exception
@@ -813,6 +817,406 @@
     End Sub
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目のファイル設定値保存
+    ' 返り値    : 0:成功、<>0:失敗数
+    ' 引き数    : なし
+    ' 機能説明  : 設定値保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveSetting2() As Integer
+        Try
+
+            Dim intRtn As Integer
+            Dim strPathBase2 As String = ""
+            Dim strPathVerInfoPrev2 As String = ""
+            Dim strPathUpdateInfo2 As String = ""
+
+            Dim strPathSaveNow2 As String = ""
+            Dim strPathSavePrev2 As String = ""
+            Dim strPathCompileNow2 As String = ""
+
+            Dim strPathTempNow2 As String = ""
+
+            Dim TostrPathCompileNow2 As String = ""
+
+            Dim strPathCompilePrev2 As String = ""
+            Dim strPathCompilePrevDel2 As String = ""
+
+            Dim strErrLogTempPath2 As String     ''2015.10.26 Ver1.7.5
+            Dim strErrLogPath2 As String         ''2015.10.26 Ver1.7.5
+
+            ''バージョン番号までのファイルパス作成
+            With mudtFileInfo
+
+                ''ファイル名までのパス
+                strPathBase2 = .strFilePath2
+
+                'strPathBase = System.IO.Path.Combine(.strFilePath, .strFileName)
+
+                ''バージョン番号までのパス（コピー用）
+                strPathSaveNow2 = System.IO.Path.Combine(strPathBase2, .strFileVersion)
+                strPathSavePrev2 = System.IO.Path.Combine(strPathBase2, .strFileVersionPrev)
+                strPathCompileNow2 = System.IO.Path.Combine(strPathBase2, .strFileVersion)
+
+                strPathTempNow2 = strPathSaveNow2 & "\"
+
+                TostrPathCompileNow2 = System.IO.Path.Combine(strPathBase2, .strFileVersion & "\Temp")
+
+                strPathCompilePrev2 = System.IO.Path.Combine(strPathBase2, .strFileVersionPrev & "\Temp")
+                strPathCompilePrevDel2 = System.IO.Path.Combine(strPathBase2, .strFileVersionPrev & "\Temp\")
+
+                ''バージョン番号までのパス
+                strPathBase2 = System.IO.Path.Combine(strPathBase2, .strFileVersion)
+
+                'strPathSaveNow = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersion), "000"))
+                'strPathSavePrev = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersionPrev), "000"))
+                'strPathCompileNow = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersion), "000"))
+
+                'strPathTempNow = strPathSaveNow & "\"
+
+                'TostrPathCompileNow = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersion), "000") & "\Temp")
+
+                'strPathCompilePrev = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersionPrev), "000") & "\Temp")
+                'strPathCompilePrevDel = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersionPrev), "000") & "\Temp\")
+
+                ' ''バージョン番号までのパス
+                'strPathBase = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersion), "000"))
+
+                ''EditorInfo配下のフォルダパス
+                strPathVerInfoPrev2 = System.IO.Path.Combine(System.IO.Path.Combine(strPathBase2, gCstFolderNameEditorInfo), gCstFolderNameVerInfoPre)
+                strPathUpdateInfo2 = System.IO.Path.Combine(System.IO.Path.Combine(strPathBase2, gCstFolderNameEditorInfo), gCstFolderNameUpdateInfo)
+
+                ''Save or Compile までのパス
+                If mblnReadCompile Then
+                    strPathBase2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameCompile)
+                Else
+                    strPathBase2 = System.IO.Path.Combine(strPathBase2, gCstFolderNameSave)
+                End If
+
+                ''Save or Compile までのパス（コピー用）
+                strPathSaveNow2 = System.IO.Path.Combine(strPathSaveNow2, gCstFolderNameSave)
+                strPathSavePrev2 = System.IO.Path.Combine(strPathSavePrev2, gCstFolderNameSave)
+                strPathCompileNow2 = System.IO.Path.Combine(strPathCompileNow2, gCstFolderNameCompile)
+                strPathCompilePrev2 = System.IO.Path.Combine(strPathCompilePrev2, gCstFolderNameCompile)
+
+            End With
+
+            ''Saveフォルダ作成
+            If gMakeFolder(strPathBase2) <> 0 Then
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase2)
+                lblMessage.Text = "File save error!!"
+                Return -1
+            End If
+
+            ''VerInfoPrevフォルダ作成
+            If gMakeFolder(strPathVerInfoPrev2) <> 0 Then
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathVerInfoPrev2)
+                lblMessage.Text = "File save error!!"
+                Return -1
+            End If
+
+            ''UpdateInfoフォルダ作成
+            If gMakeFolder(strPathUpdateInfo2) <> 0 Then
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathUpdateInfo2)
+                lblMessage.Text = "File save error!!"
+                Return -1
+            End If
+
+            ''バージョンアップ保存の場合は旧バージョンの設定ファイルをコピーする
+            If gudtFileInfo.blnVersionUP Then
+
+                ''メッセージ表示
+                lblMessage.Text = "Prev ver file is copy..." : Call lblMessage.Refresh()
+
+                ''Saveフォルダ
+                If System.IO.Directory.Exists(strPathSavePrev2) Then
+                    If gCopyDirectory(strPathSavePrev2, strPathSaveNow2, gudtFileInfo.strFileVersionPrev, gudtFileInfo.strFileVersion) <> 0 Then
+                        Call mAddMsgList("It failed in prev ver file copy. [Path]" & strPathSaveNow2)
+                        lblMessage.Text = "File save error!!"
+                        Return -1
+                    End If
+                End If
+
+                ''Compileフォルダ
+                If System.IO.Directory.Exists(strPathCompilePrev2) Then
+                    If gCopyDirectory(strPathCompilePrev2, strPathCompileNow2) <> 0 Then
+                        Call mAddMsgList("It failed in prev ver file copy. [Path]" & strPathSaveNow2)
+                        lblMessage.Text = "File save error!!"
+                        Return -1
+                    Else
+                        ''Compileフォルダコピー後Tempフォルダ削除
+                        System.IO.Directory.Delete(strPathCompilePrevDel2, True)
+                    End If
+                End If
+
+                ''UpdateInfoフォルダ    Ver1.8.3  2015.11.26
+                '' Setup.iniﾌｧｲﾙが存在すればｺﾋﾟｰ
+                If System.IO.Directory.Exists(strPathUpdateInfo2) Then
+                    Dim strPathIniNow As String
+                    Dim strPathIniPrev As String
+
+                    strPathIniNow = strPathUpdateInfo2 & "\" & gCstIniFile
+                    strPathIniPrev = strPathUpdateInfo2 & "\" & gCstIniFile
+                    If System.IO.File.Exists(strPathIniPrev) Then
+                        System.IO.File.Copy(strPathIniPrev, strPathIniNow)
+                    End If
+                End If
+
+            End If
+
+            ''TempファイルにバックアップしていたCompileフォルダを正規場所に戻す    2013.12.18
+            ''Compileフォルダ
+            If System.IO.Directory.Exists(TostrPathCompileNow2) Then
+                'Ver2.0.5.8 SIO拡張ﾌｧｲﾙ特殊処理
+                'SIO拡張ﾌｧｲﾙは増えたり減ったりするため、元のCompileﾌｫﾙﾀﾞにある該当ﾌｧｲﾙを削除する
+                Call subCompileSIOext()
+
+                If gCopyDirectory(TostrPathCompileNow2, strPathTempNow2) <> 0 Then
+                    Call mAddMsgList("It failed in Temp file. [Path]" & strPathSaveNow2)
+                    lblMessage.Text = "File save error!!"
+                    Return -1
+                Else
+                    '' 2015.10.26 Ver1.7.5 Tempﾌｫﾙﾀﾞ内のｴﾗｰﾘｽﾄを計測点ﾌｫﾙﾀﾞにｺﾋﾟｰ
+                    strErrLogTempPath2 = TostrPathCompileNow2 & "\" & mudtFileInfo.strFileName & "_err.txt"
+                    strErrLogPath2 = mudtFileInfo.strFilePath & "\" & mudtFileInfo.strFileName & "\" & mudtFileInfo.strFileName & "_err.txt"
+
+                    If System.IO.File.Exists(strErrLogTempPath2) Then    ' ｴﾗｰﾛｸﾞが存在する場合
+                        If System.IO.File.Exists(strErrLogPath2) Then    ' ｺﾋﾟｰ先にﾛｸﾞが存在する場合、削除
+                            System.IO.File.Delete(strErrLogPath2)        ' 削除
+                        End If
+                        System.IO.File.Copy(strErrLogTempPath2, strErrLogPath2)   ' 計測点ﾌｫﾙﾀﾞにｺﾋﾟｰ
+
+                        System.IO.File.Delete(strErrLogTempPath2)        ' 削除
+                    End If
+                    ''//
+                    ''Compileフォルダコピー後Tempフォルダ削除
+                    System.IO.Directory.Delete(TostrPathCompileNow2, True)
+                End If
+            End If
+
+            With prgBar
+
+                ''プログレスバー初期化
+                .Minimum = 0
+                .Maximum = mCstProgressValueMaxSave
+                .Value = 0
+
+                '********************************************************
+                '========================================================
+                ''注意！！
+                ''ここに出力ファイルを追加した場合、コンパイル出力にも
+                ''同様の追加が必要になります！！
+                ''追加箇所：frmCmpCompier - mOutputCompileFile
+                '========================================================
+                '********************************************************
+
+                'システム設定データ書き込み
+                intRtn += mSaveSystem2(mudt.SetSystem, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSystem) : .Value += 1 : Application.DoEvents()
+
+                ''FU チャンネル情報書き込み
+                intRtn += mSaveFuChannel(mudt.SetFu, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytFuChannel) : .Value += 1 : Application.DoEvents()
+
+                ''チャンネル情報データ（表示名設定データ）書き込み
+                intRtn += mSaveChDisp(mudt.SetChDisp, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChDisp) : .Value += 1 : Application.DoEvents()
+
+                ''チャンネル情報書き込み
+                intRtn += mSaveChannel(mudt.SetChInfo, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChannel) : .Value += 1 : Application.DoEvents()
+
+                ''コンポジット情報書き込み
+                intRtn += mSaveComposite(mudt.SetChComposite, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytComposite) : .Value += 1 : Application.DoEvents()
+
+                ''グループ設定書き込み
+                intRtn += mSaveGroup(mudt.SetChGroupSetM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytGroupM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveGroup(mudt.SetChGroupSetC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytGroupC) : .Value += 1 : Application.DoEvents()
+
+                ''リポーズ入力設定書き込み
+                intRtn += mSaveRepose(mudt.SetChGroupRepose, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytRepose) : .Value += 1 : Application.DoEvents()
+
+                ''出力チャンネル設定書き込み
+                intRtn += mSaveOutPut(mudt.SetChOutput, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytOutPut) : .Value += 1 : Application.DoEvents()
+
+                ''論理出力設定書き込み
+                intRtn += mSaveOrAnd(mudt.SetChAndOr, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytOrAnd) : .Value += 1 : Application.DoEvents()
+
+                ''積算データ設定書き込み
+                intRtn += mSaveChRunHour(mudt.SetChRunHour, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChRunHour) : .Value += 1 : Application.DoEvents()
+
+                ''コントロール使用可／不可設定書き込み
+                intRtn += mSaveCtrlUseNotuse(mudt.SetChCtrlUseM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytCtrlUseNotuseM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveCtrlUseNotuse(mudt.SetChCtrlUseC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytCtrlUseNotuseC) : .Value += 1 : Application.DoEvents()
+
+                ''SIO設定書き込み
+                intRtn += mSaveChSio(mudt.SetChSio, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChSio) : .Value += 1 : Application.DoEvents()
+
+                ''SIO設定CH設定書き込み
+                For i As Integer = 0 To UBound(mudt.SetChSioCh)
+                    intRtn += mSaveChSioCh(mudt.SetChSioCh(i), mudtFileInfo, strPathBase2, i + 1, mudt.SetEditorUpdateInfo.udtSave.bytChSioCh(i)) : .Value += 1 : Application.DoEvents()
+                Next
+
+                'Ver2.0.5.8
+                'SIO設定拡張設定書き込み ※プログレスバーには加算しない
+                For i As Integer = 0 To UBound(mudt.SetChSioExt)
+                    intRtn += mSaveChSioExt(mudt.SetChSioExt(i), mudtFileInfo, strPathBase2, i + 1, mudt.SetEditorUpdateInfo.udtSave.bytChSioExt(i), mudt.SetChSio.udtVdr(i).shtKakuTbl) : .Value += 0 : Application.DoEvents()
+                Next
+
+
+                ''排ガス処理演算設定書き込み
+                intRtn += mSaveExhGus(mudt.SetChExhGus, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytExhGus) : .Value += 1 : Application.DoEvents()
+
+                ''延長警報書き込み
+                intRtn += mSaveExtAlarm(mudt.SetExtAlarm, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytExtAlarm) : .Value += 1 : Application.DoEvents()
+
+                ''タイマ設定書き込み
+                intRtn += mSaveTimer(mudt.SetExtTimerSet, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytTimer) : .Value += 1 : Application.DoEvents()
+
+                ''タイマ表示名称設定書き込み
+                intRtn += mSaveTimerName(mudt.SetExtTimerName, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytTimerName) : .Value += 1 : Application.DoEvents()
+
+                ''シーケンスID書き込み
+                intRtn += mSaveSeqSequenceID(mudt.SetSeqID, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSeqSequenceID) : .Value += 1 : Application.DoEvents()
+
+                ''シーケンス設定書き込み
+                intRtn += mSaveSeqSequenceSet(mudt.SetSeqSet, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSeqSequenceSet) : .Value += 1 : Application.DoEvents()
+
+                'リニアライズテーブル書き込み
+                intRtn += mSaveSeqLinear(mudt.SetSeqLinear, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSeqLinear) : .Value += 1 : Application.DoEvents()
+
+                '演算式テーブル書き込み
+                intRtn += mSaveSeqOperationExpression(mudt.SetSeqOpeExp, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSeqOperationExpression) : .Value += 1 : Application.DoEvents()
+
+                ''データ保存テーブル設定
+                intRtn += mSaveChDataSaveTable(mudt.SetChDataSave, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChDataSaveTable) : .Value += 1 : Application.DoEvents()
+
+                ''データ転送テーブル設定
+                intRtn += mSaveChDataForwardTableSet(mudt.SetChDataForward, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChDataForwardTableSet) : .Value += 1 : Application.DoEvents()
+
+                'OPSスクリーンタイトル
+                intRtn += mSaveOpsScreenTitle(mudt.SetOpsScreenTitleM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsScreenTitleM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsScreenTitle(mudt.SetOpsScreenTitleC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsScreenTitleC) : .Value += 1 : Application.DoEvents()
+
+                ''プルダウンメニュー
+                intRtn += mSaveManuMain(mudt.SetOpsPulldownMenuM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsManuMainM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveManuMain(mudt.SetOpsPulldownMenuC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsManuMainC) : .Value += 1 : Application.DoEvents()
+
+                ''セレクションメニュー
+                intRtn += mSaveSelectionMenu(mudt.SetOpsSelectionMenuM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsSelectionMenuM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveSelectionMenu(mudt.SetOpsSelectionMenuC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsSelectionMenuC) : .Value += 1 : Application.DoEvents()
+
+                ''OPSグラフ設定
+                intRtn += mSaveOpsGraph(mudt.SetOpsGraphM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsGraphM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsGraph(mudt.SetOpsGraphC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsGraphC) : .Value += 1 : Application.DoEvents()
+
+                ''フリーグラフ    2013.07.22 グラフとフリーグラフを分離  K.Fujimoto
+                intRtn += mSaveOpsFreeGraph(mudt.SetOpsFreeGraphM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsFreeGraphM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsFreeGraph(mudt.SetOpsFreeGraphC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsFreeGraphC) : .Value += 1 : Application.DoEvents()
+
+                ''フリーディスプレイ
+                intRtn += mSaveOpsFreeDisplay(mudt.SetOpsFreeDisplayM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsFreeDisplayM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsFreeDisplay(mudt.SetOpsFreeDisplayC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsFreeDisplayC) : .Value += 1 : Application.DoEvents()
+
+                ''トレンドグラフ
+                intRtn += mSaveOpsTrendGraph(mudt.SetOpsTrendGraphM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsTrendGraph(mudt.SetOpsTrendGraphC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsTrendGraph_PID(mudt.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphPID) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsTrendGraph_PID(mudt.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphPID2) : .Value += 1 : Application.DoEvents()
+
+
+                ''ログフォーマット
+                intRtn += mSaveOpsLogFormat(mudt.SetOpsLogFormatM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogFormatM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsLogFormat(mudt.SetOpsLogFormatC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogFormatC) : .Value += 1 : Application.DoEvents()
+
+                ''ログフォーマットCHID ☆2012/10/26 K.Tanigawa
+                intRtn += mSaveOpsLogIdData(mudt.SetOpsLogIdDataM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogIdDataM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsLogIdData(mudt.SetOpsLogIdDataC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogIdDataC) : .Value += 1 : Application.DoEvents()
+
+                '' ﾛｸﾞｵﾌﾟｼｮﾝ設定　Ver1.9.3 2016.01.25 
+                intRtn += mSaveOpsLogOption(mudt.SetOpsLogOption, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogOption) : .Value += 1 : Application.DoEvents()
+
+                ''GWS設定CH設定書き込み 2014.02.04
+                intRtn += mSaveOpsGwsCh(mudt.SetOpsGwsCh, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytOpsGwsCh) : .Value += 1 : Application.DoEvents()
+
+                ''CH変換テーブル（前VerのCH変換テーブルをVerInfoPrevフォルダに保存する）
+                intRtn += mSaveChConv(mudt.SetChConvPrev, mudtFileInfo, strPathVerInfoPrev2, mudt.SetEditorUpdateInfo.udtSave.bytChConvPrev, mudt.SetChInfo) : .Value += 1 : Application.DoEvents()
+
+                ''CH変換テーブル（現VerのCH変換テーブルをSaveフォルダに保存する）
+                intRtn += mSaveChConv(mudt.SetChConvNow, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChConvNow, mudt.SetChInfo) : .Value += 1 : Application.DoEvents()
+
+                ''ファイル更新情報
+                intRtn += mSaveEditorUpdateInfo(mudt.SetEditorUpdateInfo, mudtFileInfo, strPathUpdateInfo2) : .Value += 1 : Application.DoEvents()
+
+                '' Setup.iniﾌｧｲﾙ書き込み   Ver1.8.3  2015.11.26
+                SaveEditIni(strPathUpdateInfo2 & "\" & gCstIniFile)
+
+                .Value = .Maximum : Application.DoEvents()
+
+                ''メッセージ表示
+                If intRtn <> 0 Then
+
+                    ''失敗
+                    lblMessage.Text = "Saving failed."
+                    lblMessage.ForeColor = Color.Red
+
+                Else
+
+                    ''成功
+                    lblMessage.Text = "The files have been saved successfully."
+                    lblMessage.ForeColor = Color.Blue
+
+                End If
+
+                Return intRtn
+
+            End With
+
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+            Return -1
+        End Try
+
+    End Function
+
+    Private Sub subCompileSIOext2()
+        Dim intPortNo As Integer = 1
+        Dim strPathBase As String = ""
+        Dim strCpath As String = ""
+        Dim strOrgPath As String = ""
+        Dim strFullPath As String = ""
+        Dim strFullOrgPath As String = ""
+        Dim strFullTempOrgPath As String = ""
+        Dim strTempOrg As String = ""
+
+        strPathBase = mudtFileInfo.strFilePath
+        strPathBase = System.IO.Path.Combine(strPathBase, mudtFileInfo.strFileVersion)
+        strTempOrg = System.IO.Path.Combine(strPathBase, "Temp")
+        strPathBase = System.IO.Path.Combine(strPathBase, gCstFolderNameCompile)
+        strTempOrg = System.IO.Path.Combine(strTempOrg, gCstFolderNameCompile)
+        strCpath = System.IO.Path.Combine(strPathBase, gCstPathChSioExt)
+        strOrgPath = System.IO.Path.Combine(strPathBase, gCstFolderNameOrg)
+        strOrgPath = System.IO.Path.Combine(strOrgPath, gCstPathChSioExt)
+        strTempOrg = System.IO.Path.Combine(strTempOrg, gCstFolderNameOrg)
+        strTempOrg = System.IO.Path.Combine(strTempOrg, gCstPathChSioExt)
+
+        '2019.03.18 ファイル数変更
+        Dim strCurFileName As String
+        For intPortNo = 1 To 16 Step 1
+            strCurFileName = mGetOutputFileName(mudtFileInfo, gCstFileChSioExtName, True) & Format(intPortNo, "00") & gCstFileChSioExtExt
+            strFullPath = System.IO.Path.Combine(strCpath, strCurFileName)
+            strFullOrgPath = System.IO.Path.Combine(strOrgPath, strCurFileName)
+            strFullTempOrgPath = System.IO.Path.Combine(strTempOrg, strCurFileName)
+
+            If System.IO.File.Exists(strFullPath) = True Then
+                Call System.IO.File.Delete(strFullPath)
+            End If
+            If System.IO.File.Exists(strFullOrgPath) = True Then
+                Call System.IO.File.Delete(strFullOrgPath)
+            End If
+            If System.IO.File.Exists(strFullTempOrgPath) = True Then
+                'Call System.IO.File.Delete(strFullTempOrgPath)
+            End If
+        Next
+
+    End Sub
+    '--------------------------------------------------------------------
     ' 機能      : 設定値読み込み
     ' 返り値    : 0:成功、<>0:失敗数
     ' 引き数    : なし
@@ -1242,99 +1646,99 @@
 
 
                 ''システム設定データ読み込み
-                intRtn += mLoadSystem2(mudt.SetSystem, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadSystem2(mudt2.SetSystem, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''FU チャンネル情報読み込み
-                intRtn += mLoadFuChannel2(mudt.SetFu, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadFuChannel2(mudt2.SetFu, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''チャンネル情報データ（表示名設定データ）読み込み
-                intRtn += mLoadChDisp2(mudt.SetChDisp, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadChDisp2(mudt2.SetChDisp, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''チャンネル情報読み込み
-                intRtn += mLoadChannel2(mudt.SetChInfo, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadChannel2(mudt2.SetChInfo, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''コンポジット情報読み込み
-                intRtn += mLoadComposite2(mudt.SetChComposite, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadComposite2(mudt2.SetChComposite, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''グループ設定読み込み（植木）
-                intRtn += mLoadGroup2(mudt.SetChGroupSetM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
-                intRtn += mLoadGroup2(mudt.SetChGroupSetC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadGroup2(mudt2.SetChGroupSetM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadGroup2(mudt2.SetChGroupSetC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
 
                 ''リポーズ入力設定読み込み
-                intRtn += mLoadRepose2(mudt.SetChGroupRepose, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadRepose2(mudt2.SetChGroupRepose, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''出力チャンネル設定読み込み
-                intRtn += mLoadOutPut2(mudt.SetChOutput, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOutPut2(mudt2.SetChOutput, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''論理出力設定読み込み
-                intRtn += mLoadOrAnd2(mudt.SetChAndOr, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOrAnd2(mudt2.SetChAndOr, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''積算データ設定読み込み
-                intRtn += mLoadChRunHour2(mudt.SetChRunHour, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadChRunHour2(mudt2.SetChRunHour, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''コントロール使用可／不可設定書き込み
-                intRtn += mLoadCtrlUseNotuse2(mudt.SetChCtrlUseM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
-                intRtn += mLoadCtrlUseNotuse2(mudt.SetChCtrlUseC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadCtrlUseNotuse2(mudt2.SetChCtrlUseM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadCtrlUseNotuse2(mudt2.SetChCtrlUseC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
 
                 ''SIO設定読み込み
-                intRtn += mLoadChSio2(mudt.SetChSio, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadChSio2(mudt2.SetChSio, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''SIO設定CH設定読み込み
-                For i As Integer = 0 To UBound(mudt.SetChSioCh)
-                    intRtn += mLoadChSioCh2(mudt.SetChSioCh(i), mudtFileInfo, strPathBase2, i + 1) : .Value += 1 : Application.DoEvents()
+                For i As Integer = 0 To UBound(mudt2.SetChSioCh)
+                    intRtn += mLoadChSioCh2(mudt2.SetChSioCh(i), mudtFileInfo, strPathBase2, i + 1) : .Value += 1 : Application.DoEvents()
                 Next
 
                 'Ver2.0.5.8
                 'SIO設定拡張読み込み ※プログレスバーにプラスはしない
-                For i As Integer = 0 To UBound(mudt.SetChSioExt)
-                    intRtn += mLoadChSioExt2(mudt.SetChSioExt(i), mudtFileInfo, strPathBase2, i + 1) : .Value += 0 : Application.DoEvents()
+                For i As Integer = 0 To UBound(mudt2.SetChSioExt)
+                    intRtn += mLoadChSioExt2(mudt2.SetChSioExt(i), mudtFileInfo, strPathBase2, i + 1) : .Value += 0 : Application.DoEvents()
                 Next
 
                 ''排ガス処理演算設定読み込み
-                intRtn += mLoadexhGus2(mudt.SetChExhGus, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadexhGus2(mudt2.SetChExhGus, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''延長警報設定読み込み
-                intRtn += mLoadExtAlarm2(mudt.SetExtAlarm, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadExtAlarm2(mudt2.SetExtAlarm, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''タイマ設定読み込み
-                intRtn += mLoadTimer2(mudt.SetExtTimerSet, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadTimer2(mudt2.SetExtTimerSet, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''タイマ表示名称設定読み込み
-                intRtn += mLoadTimerName2(mudt.SetExtTimerName, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadTimerName2(mudt2.SetExtTimerName, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''シーケンスID読み込み
-                intRtn += mLoadSeqSequenceID2(mudt.SetSeqID, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadSeqSequenceID2(mudt2.SetSeqID, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''シーケンス設定読み込み
-                intRtn += mLoadSeqSequenceSet2(mudt.SetSeqSet, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadSeqSequenceSet2(mudt2.SetSeqSet, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 'リニアライズテーブル読み込み
-                intRtn += mLoadSeqLinear2(mudt.SetSeqLinear, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadSeqLinear2(mudt2.SetSeqLinear, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 '演算式テーブル読み込み
-                intRtn += mLoadSeqOperationExpression2(mudt.SetSeqOpeExp, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadSeqOperationExpression2(mudt2.SetSeqOpeExp, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''データ保存テーブル設定
-                intRtn += mLoadChDataSaveTable2(mudt.SetChDataSave, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadChDataSaveTable2(mudt2.SetChDataSave, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''データ転送テーブル設定
-                intRtn += mLoadChDataForwardTableSet2(mudt.SetChDataForward, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadChDataForwardTableSet2(mudt2.SetChDataForward, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''OPSスクリーンタイトルデータ読み込み
                 intRtn += mLoadOpsScreenTitle2(mudt.SetOpsScreenTitleM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
-                intRtn += mLoadOpsScreenTitle2(mudt.SetOpsScreenTitleC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsScreenTitle2(mudt2.SetOpsScreenTitleC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
 
                 ''プルダウンメニュー
-                intRtn += mLoadManuMain2(mudt.SetOpsPulldownMenuM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
-                intRtn += mLoadManuMain2(mudt.SetOpsPulldownMenuC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadManuMain2(mudt2.SetOpsPulldownMenuM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadManuMain2(mudt2.SetOpsPulldownMenuC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
 
                 ''セレクションメニュー
-                intRtn += mLoadSelectionMenu2(mudt.SetOpsSelectionMenuM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
-                intRtn += mLoadSelectionMenu2(mudt.SetOpsSelectionMenuC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadSelectionMenu2(mudt2.SetOpsSelectionMenuM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadSelectionMenu2(mudt2.SetOpsSelectionMenuC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
 
                 ''OPSグラフ設定
-                intRtn += mLoadOpsGraph2(mudt.SetOpsGraphM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
-                intRtn += mLoadOpsGraph2(mudt.SetOpsGraphC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsGraph2(mudt2.SetOpsGraphM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsGraph2(mudt2.SetOpsGraphC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
 
                 '---------------------------------------------------------------------------
                 'フリーディスプレイとトレンドグラフは空データ出力なので読み込みは行わない
@@ -1348,26 +1752,26 @@
                 ''intRtn += mSaveOpsTrendGraph(mudt.SetOpsTrendGraphC, mudtFileInfo, strPathBase, False) : .Value += 1: Application.DoEvents()
 
                 'PID
-                intRtn += mLoadOpsTrendGraph_PID2(mudt.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
-                intRtn += mLoadOpsTrendGraph_PID2(mudt.SetOpsTrendGraphPIDprev, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsTrendGraph_PID2(mudt2.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsTrendGraph_PID2(mudt2.SetOpsTrendGraphPIDprev, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
 
 
                 ''2014/5/14 コンパイル比較の場合は読み込まない　T.Ueki
                 If mblnReadCompile = False Then
                     ''ログフォーマット
-                    intRtn += mLoadOpsLogFormat2(mudt.SetOpsLogFormatM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
-                    intRtn += mLoadOpsLogFormat2(mudt.SetOpsLogFormatC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                    intRtn += mLoadOpsLogFormat2(mudt2.SetOpsLogFormatM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                    intRtn += mLoadOpsLogFormat2(mudt2.SetOpsLogFormatC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
                 End If
 
                 ''ログフォーマットCHID 　☆2012/10/26 K.Tanigawa
-                intRtn += mLoadOpsLogIdData2(mudt.SetOpsLogIdDataM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
-                intRtn += mLoadOpsLogIdData2(mudt.SetOpsLogIdDataC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsLogIdData2(mudt2.SetOpsLogIdDataM, mudtFileInfo, strPathBase2, True) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsLogIdData2(mudt2.SetOpsLogIdDataC, mudtFileInfo, strPathBase2, False) : .Value += 1 : Application.DoEvents()
 
                 '' Ver1.9.3 2016.01.25 ﾛｸﾞｵﾌﾟｼｮﾝ設定追加
-                intRtn += mLoadOpsLogOption2(mudt.SetOpsLogOption, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadOpsLogOption2(mudt2.SetOpsLogOption, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''GWS設定CH設定読み込み 2014.02.04
-                intRtn += mLoadopsGwsCh2(mudt.SetOpsGwsCh, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
+                intRtn += mLoadopsGwsCh2(mudt2.SetOpsGwsCh, mudtFileInfo, strPathBase2) : .Value += 1 : Application.DoEvents()
 
                 ''CH変換テーブル
                 If mblnVersionUP Then
@@ -1379,17 +1783,17 @@
                     If mblnReadCompile = False Then
 
                         ''バージョンアップ前のコンパイルフォルダから読み込む
-                        intRtn += mLoadChConv2(mudt.SetChConvPrev, mudtFileInfo, strPathComp2)
+                        intRtn += mLoadChConv2(mudt2.SetChConvPrev, mudtFileInfo, strPathComp2)
 
                     Else
 
                         ''バージョンアップ前のSaveフォルダから読み込む
-                        intRtn += mLoadChConv2(mudt.SetChConvPrev, mudtFileInfo, strPathBase2)
+                        intRtn += mLoadChConv2(mudt2.SetChConvPrev, mudtFileInfo, strPathBase2)
 
                     End If
 
                     ''現VerのCH変換テーブルを初期化する
-                    Call gInitSetChConv(mudt.SetChConvNow)
+                    Call gInitSetChConv(mudt2.SetChConvNow)
 
                 Else
 
@@ -1404,7 +1808,7 @@
 
                         ''現バージョンのCH変換テーブルをSaveフォルダから読み込む
                         'intRtn += mLoadChConv(mudt.SetChConvNow, mudtFileInfo, strPathBase)
-                        intRtn += mLoadChConv2(mudt.SetChConvPrev, mudtFileInfo, strPathBase2)
+                        intRtn += mLoadChConv2(mudt2.SetChConvPrev, mudtFileInfo, strPathBase2)
                     End If
 
                 End If
@@ -1825,6 +2229,89 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のシステム設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) システム設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveSystem2(ByVal udtSetSystem As gTypSetSystem, _
+                                 ByVal udtFileInfo As gTypFileInfo, _
+                                 ByVal strPathBase As String, _
+                                 ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave2 As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSystem
+            ' Dim strCurFileName As String = mGetOutputFileName(udtFileInfo, gCstFileSystem, mblnReadCompile)
+            Dim strCurFileName2 As String = mGetOutputFileName2(udtFileInfo, gCstFileSystem, mblnReadCompile)
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+            ''保存パスを作成
+            strPathSave2 = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave2, strCurFileName2)
+
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave2, gCstFileSystem)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave2) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetSystem.udtHeader, udtFileInfo.strFileVersion, gCstRecsSystem, gCstSizeSystem, , , , gCstFnumSystem)
+
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetSystem)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
