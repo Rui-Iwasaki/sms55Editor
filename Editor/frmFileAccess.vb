@@ -236,6 +236,96 @@
                         mintRtn = -1
                     End If
 
+                    If mSaveSetting2() = 0 Then
+                        'Ver2.0.4.2 Excel出力しないﾌﾗｸﾞあり
+                        If gblExcelInDo = True And gblExcelOut = True Then
+                            gblExcelInDo = False
+                            With mudtFileInfo
+                                'Ver2.0.3.2
+                                '■■■EXCELコンバータ処理開始■■■
+                                '編集起動の場合は、EXCELコンバータを必ず起動
+                                'Excelが保管されてるﾌｫﾙﾀﾞへ処理指定ﾌｧｲﾙを生成する
+                                Dim strExcelPath As String = System.IO.Path.Combine(gGetAppPath(), "EXCELCNV")
+                                Dim strExcelFile As String = System.IO.Path.Combine(strExcelPath, "SMS55_mode.txt")
+
+                                'ﾃﾞｰﾀパス作成
+                                Dim strDataPath As String = System.IO.Path.Combine(.strFilePath, .strFileName)
+                                strDataPath = System.IO.Path.Combine(strDataPath, gCstFolderNameSave)
+                                strDataPath = System.IO.Path.Combine(strDataPath, gCstPathChannel)
+                                Dim strCurFileName As String = ""
+                                Dim strOutData As String = ""
+
+                                Dim sw As IO.StreamWriter
+                                sw = New IO.StreamWriter(strExcelFile, False, System.Text.Encoding.GetEncoding("Shift-JIS"))
+                                'Mode
+                                'Ver2.0.7.M (保安庁)
+                                If g_bytHOAN = 1 Or gudt.SetSystem.udtSysSystem.shtLanguage = 2 Then
+                                    sw.WriteLine("12")
+                                Else
+                                    sw.WriteLine("2")
+                                End If
+                                'EXCELファイル名
+                                'MPTファイル名
+                                strCurFileName = .strFileName & "_" & gCstFileChannel
+                                strOutData = System.IO.Path.Combine(strDataPath, strCurFileName)
+                                sw.WriteLine(strOutData)
+                                'ファイル名
+                                sw.WriteLine(.strFileName)
+                                'ｸﾞﾙｰﾌﾟﾌｧｲﾙ名
+                                strCurFileName = .strFileName & "_" & gCstFileGroupM
+                                strOutData = System.IO.Path.Combine(strDataPath, strCurFileName)
+                                sw.WriteLine(strOutData)
+                                'パス
+                                strOutData = System.IO.Path.Combine(.strFilePath, .strFileName)
+                                sw.WriteLine(strOutData)
+                                '書き込み終了
+                                If sw Is Nothing = False Then sw.Close()
+
+                                'ExcelConverterキック
+                                strExcelFile = System.IO.Path.Combine(strExcelPath, "CHList_EXCEL.exe")
+                                Dim p As System.Diagnostics.Process = System.Diagnostics.Process.Start(strExcelFile)
+                                Dim _thread As System.Threading.Thread = Nothing
+                                frmSplash.ShowSplash(_thread)
+                                p.WaitForExit()
+                                frmSplash.Close()
+                                _thread.Abort()
+                                _thread.Join()
+                                _thread = Nothing
+
+                                'Ver2.0.3.6 Excel処理でエラーが発生＝file作成したら画面へﾛｸﾞを出す。
+                                Dim strFileLine() As String = Nothing
+                                Dim strLogPath As String = System.IO.Path.Combine(.strFilePath, .strFileName)
+                                strLogPath = System.IO.Path.Combine(strLogPath, "ErrLog_MtoE.txt")
+                                If System.IO.File.Exists(strLogPath) = True Then
+                                    'ｺﾝﾊﾟｲﾙ結果ﾌｧｲﾙが存在すれば読み込んでｴﾃﾞｨﾀのﾛｸﾞへ書き出し
+                                    Dim sr As IO.StreamReader
+                                    sr = New IO.StreamReader(strLogPath, System.Text.Encoding.GetEncoding("shift_jis"))
+                                    Dim strFileData As String = sr.ReadToEnd()
+                                    strFileLine = Split(strFileData, vbCrLf)
+                                    sr.Close()
+                                    gstrChSearchLog = ""
+                                    For z As Integer = LBound(strFileLine) To UBound(strFileLine) Step 1
+                                        gstrChSearchLog = gstrChSearchLog & strFileLine(z) & vbCrLf
+                                    Next z
+                                    '用済みﾛｸﾞは消してはならない
+                                    'System.IO.File.Delete(strLogPath)
+                                End If
+
+                                'Call frmToolExcelCnv.gShow(0)
+                            End With
+                        End If
+                        gblExcelInDo = False
+                        '■■■EXCELコンバータ処理終了■■■
+
+                        mintRtn = 0
+
+                        ''保存成功で終了フラグTrueの場合は自動で画面を閉じる
+                        If mblnExit Then Me.Close()
+
+                    Else
+                        mintRtn = -1
+                    End If
+
                 Case gEnmAccessMode.amLoad
 
                     ''設定値読込処理
@@ -853,19 +943,19 @@
                 'strPathBase = System.IO.Path.Combine(.strFilePath, .strFileName)
 
                 ''バージョン番号までのパス（コピー用）
-                strPathSaveNow2 = System.IO.Path.Combine(strPathBase2, .strFileVersion)
+                strPathSaveNow2 = System.IO.Path.Combine(strPathBase2, .strFileVersion2)
                 strPathSavePrev2 = System.IO.Path.Combine(strPathBase2, .strFileVersionPrev)
-                strPathCompileNow2 = System.IO.Path.Combine(strPathBase2, .strFileVersion)
+                strPathCompileNow2 = System.IO.Path.Combine(strPathBase2, .strFileVersion2)
 
                 strPathTempNow2 = strPathSaveNow2 & "\"
 
-                TostrPathCompileNow2 = System.IO.Path.Combine(strPathBase2, .strFileVersion & "\Temp")
+                TostrPathCompileNow2 = System.IO.Path.Combine(strPathBase2, .strFileVersion2 & "\Temp")
 
                 strPathCompilePrev2 = System.IO.Path.Combine(strPathBase2, .strFileVersionPrev & "\Temp")
                 strPathCompilePrevDel2 = System.IO.Path.Combine(strPathBase2, .strFileVersionPrev & "\Temp\")
 
                 ''バージョン番号までのパス
-                strPathBase2 = System.IO.Path.Combine(strPathBase2, .strFileVersion)
+                strPathBase2 = System.IO.Path.Combine(strPathBase2, .strFileVersion2)
 
                 'strPathSaveNow = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersion), "000"))
                 'strPathSavePrev = System.IO.Path.Combine(strPathBase, gCstVersionPrefix & Format(CInt(.strFileVersionPrev), "000"))
@@ -929,7 +1019,7 @@
 
                 ''Saveフォルダ
                 If System.IO.Directory.Exists(strPathSavePrev2) Then
-                    If gCopyDirectory(strPathSavePrev2, strPathSaveNow2, gudtFileInfo.strFileVersionPrev, gudtFileInfo.strFileVersion) <> 0 Then
+                    If gCopyDirectory(strPathSavePrev2, strPathSaveNow2, gudtFileInfo.strFileVersionPrev, gudtFileInfo.strFileVersion2) <> 0 Then
                         Call mAddMsgList("It failed in prev ver file copy. [Path]" & strPathSaveNow2)
                         lblMessage.Text = "File save error!!"
                         Return -1
@@ -976,8 +1066,8 @@
                     Return -1
                 Else
                     '' 2015.10.26 Ver1.7.5 Tempﾌｫﾙﾀﾞ内のｴﾗｰﾘｽﾄを計測点ﾌｫﾙﾀﾞにｺﾋﾟｰ
-                    strErrLogTempPath2 = TostrPathCompileNow2 & "\" & mudtFileInfo.strFileName & "_err.txt"
-                    strErrLogPath2 = mudtFileInfo.strFilePath & "\" & mudtFileInfo.strFileName & "\" & mudtFileInfo.strFileName & "_err.txt"
+                    strErrLogTempPath2 = TostrPathCompileNow2 & "\" & mudtFileInfo.strFileName2 & "_err.txt"
+                    strErrLogPath2 = mudtFileInfo.strFilePath & "\" & mudtFileInfo.strFileName2 & "\" & mudtFileInfo.strFileName2 & "_err.txt"
 
                     If System.IO.File.Exists(strErrLogTempPath2) Then    ' ｴﾗｰﾛｸﾞが存在する場合
                         If System.IO.File.Exists(strErrLogPath2) Then    ' ｺﾋﾟｰ先にﾛｸﾞが存在する場合、削除
@@ -1010,138 +1100,138 @@
                 '********************************************************
 
                 'システム設定データ書き込み
-                intRtn += mSaveSystem2(mudt.SetSystem, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSystem) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveSystem2(mudt2.SetSystem, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytSystem) : .Value += 1 : Application.DoEvents()
 
                 ''FU チャンネル情報書き込み
-                intRtn += mSaveFuChannel(mudt.SetFu, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytFuChannel) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveFuChannel2(mudt2.SetFu, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytFuChannel) : .Value += 1 : Application.DoEvents()
 
                 ''チャンネル情報データ（表示名設定データ）書き込み
-                intRtn += mSaveChDisp(mudt.SetChDisp, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChDisp) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveChDisp2(mudt2.SetChDisp, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytChDisp) : .Value += 1 : Application.DoEvents()
 
                 ''チャンネル情報書き込み
-                intRtn += mSaveChannel(mudt.SetChInfo, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChannel) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveChannel2(mudt2.SetChInfo, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytChannel) : .Value += 1 : Application.DoEvents()
 
                 ''コンポジット情報書き込み
-                intRtn += mSaveComposite(mudt.SetChComposite, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytComposite) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveComposite2(mudt2.SetChComposite, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytComposite) : .Value += 1 : Application.DoEvents()
 
                 ''グループ設定書き込み
-                intRtn += mSaveGroup(mudt.SetChGroupSetM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytGroupM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveGroup(mudt.SetChGroupSetC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytGroupC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveGroup2(mudt2.SetChGroupSetM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytGroupM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveGroup2(mudt2.SetChGroupSetC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytGroupC) : .Value += 1 : Application.DoEvents()
 
                 ''リポーズ入力設定書き込み
-                intRtn += mSaveRepose(mudt.SetChGroupRepose, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytRepose) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveRepose2(mudt2.SetChGroupRepose, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytRepose) : .Value += 1 : Application.DoEvents()
 
                 ''出力チャンネル設定書き込み
-                intRtn += mSaveOutPut(mudt.SetChOutput, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytOutPut) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOutPut2(mudt2.SetChOutput, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytOutPut) : .Value += 1 : Application.DoEvents()
 
                 ''論理出力設定書き込み
-                intRtn += mSaveOrAnd(mudt.SetChAndOr, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytOrAnd) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOrAnd2(mudt2.SetChAndOr, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytOrAnd) : .Value += 1 : Application.DoEvents()
 
                 ''積算データ設定書き込み
-                intRtn += mSaveChRunHour(mudt.SetChRunHour, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChRunHour) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveChRunHour2(mudt2.SetChRunHour, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytChRunHour) : .Value += 1 : Application.DoEvents()
 
                 ''コントロール使用可／不可設定書き込み
-                intRtn += mSaveCtrlUseNotuse(mudt.SetChCtrlUseM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytCtrlUseNotuseM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveCtrlUseNotuse(mudt.SetChCtrlUseC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytCtrlUseNotuseC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveCtrlUseNotuse2(mudt2.SetChCtrlUseM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytCtrlUseNotuseM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveCtrlUseNotuse2(mudt2.SetChCtrlUseC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytCtrlUseNotuseC) : .Value += 1 : Application.DoEvents()
 
                 ''SIO設定書き込み
-                intRtn += mSaveChSio(mudt.SetChSio, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChSio) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveChSio2(mudt2.SetChSio, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytChSio) : .Value += 1 : Application.DoEvents()
 
                 ''SIO設定CH設定書き込み
-                For i As Integer = 0 To UBound(mudt.SetChSioCh)
-                    intRtn += mSaveChSioCh(mudt.SetChSioCh(i), mudtFileInfo, strPathBase2, i + 1, mudt.SetEditorUpdateInfo.udtSave.bytChSioCh(i)) : .Value += 1 : Application.DoEvents()
+                For i As Integer = 0 To UBound(mudt2.SetChSioCh)
+                    intRtn += mSaveChSioCh2(mudt2.SetChSioCh(i), mudtFileInfo, strPathBase2, i + 1, mudt2.SetEditorUpdateInfo.udtSave.bytChSioCh(i)) : .Value += 1 : Application.DoEvents()
                 Next
 
                 'Ver2.0.5.8
                 'SIO設定拡張設定書き込み ※プログレスバーには加算しない
-                For i As Integer = 0 To UBound(mudt.SetChSioExt)
-                    intRtn += mSaveChSioExt(mudt.SetChSioExt(i), mudtFileInfo, strPathBase2, i + 1, mudt.SetEditorUpdateInfo.udtSave.bytChSioExt(i), mudt.SetChSio.udtVdr(i).shtKakuTbl) : .Value += 0 : Application.DoEvents()
+                For i As Integer = 0 To UBound(mudt2.SetChSioExt)
+                    intRtn += mSaveChSioExt2(mudt2.SetChSioExt(i), mudtFileInfo, strPathBase2, i + 1, mudt2.SetEditorUpdateInfo.udtSave.bytChSioExt(i), mudt2.SetChSio.udtVdr(i).shtKakuTbl) : .Value += 0 : Application.DoEvents()
                 Next
 
 
                 ''排ガス処理演算設定書き込み
-                intRtn += mSaveExhGus(mudt.SetChExhGus, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytExhGus) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveExhGus2(mudt2.SetChExhGus, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytExhGus) : .Value += 1 : Application.DoEvents()
 
                 ''延長警報書き込み
-                intRtn += mSaveExtAlarm(mudt.SetExtAlarm, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytExtAlarm) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveExtAlarm2(mudt2.SetExtAlarm, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytExtAlarm) : .Value += 1 : Application.DoEvents()
 
                 ''タイマ設定書き込み
-                intRtn += mSaveTimer(mudt.SetExtTimerSet, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytTimer) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveTimer2(mudt2.SetExtTimerSet, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytTimer) : .Value += 1 : Application.DoEvents()
 
                 ''タイマ表示名称設定書き込み
-                intRtn += mSaveTimerName(mudt.SetExtTimerName, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytTimerName) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveTimerName2(mudt2.SetExtTimerName, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytTimerName) : .Value += 1 : Application.DoEvents()
 
                 ''シーケンスID書き込み
-                intRtn += mSaveSeqSequenceID(mudt.SetSeqID, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSeqSequenceID) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveSeqSequenceID2(mudt2.SetSeqID, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytSeqSequenceID) : .Value += 1 : Application.DoEvents()
 
                 ''シーケンス設定書き込み
-                intRtn += mSaveSeqSequenceSet(mudt.SetSeqSet, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSeqSequenceSet) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveSeqSequenceSet2(mudt2.SetSeqSet, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytSeqSequenceSet) : .Value += 1 : Application.DoEvents()
 
                 'リニアライズテーブル書き込み
-                intRtn += mSaveSeqLinear(mudt.SetSeqLinear, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSeqLinear) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveSeqLinear2(mudt2.SetSeqLinear, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytSeqLinear) : .Value += 1 : Application.DoEvents()
 
                 '演算式テーブル書き込み
-                intRtn += mSaveSeqOperationExpression(mudt.SetSeqOpeExp, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytSeqOperationExpression) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveSeqOperationExpression2(mudt2.SetSeqOpeExp, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytSeqOperationExpression) : .Value += 1 : Application.DoEvents()
 
                 ''データ保存テーブル設定
-                intRtn += mSaveChDataSaveTable(mudt.SetChDataSave, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChDataSaveTable) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveChDataSaveTable2(mudt2.SetChDataSave, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytChDataSaveTable) : .Value += 1 : Application.DoEvents()
 
                 ''データ転送テーブル設定
-                intRtn += mSaveChDataForwardTableSet(mudt.SetChDataForward, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChDataForwardTableSet) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveChDataForwardTableSet2(mudt2.SetChDataForward, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytChDataForwardTableSet) : .Value += 1 : Application.DoEvents()
 
                 'OPSスクリーンタイトル
-                intRtn += mSaveOpsScreenTitle(mudt.SetOpsScreenTitleM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsScreenTitleM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveOpsScreenTitle(mudt.SetOpsScreenTitleC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsScreenTitleC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsScreenTitle2(mudt2.SetOpsScreenTitleM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsScreenTitleM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsScreenTitle2(mudt2.SetOpsScreenTitleC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsScreenTitleC) : .Value += 1 : Application.DoEvents()
 
                 ''プルダウンメニュー
-                intRtn += mSaveManuMain(mudt.SetOpsPulldownMenuM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsManuMainM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveManuMain(mudt.SetOpsPulldownMenuC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsManuMainC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveManuMain2(mudt2.SetOpsPulldownMenuM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsManuMainM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveManuMain2(mudt2.SetOpsPulldownMenuC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsManuMainC) : .Value += 1 : Application.DoEvents()
 
                 ''セレクションメニュー
-                intRtn += mSaveSelectionMenu(mudt.SetOpsSelectionMenuM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsSelectionMenuM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveSelectionMenu(mudt.SetOpsSelectionMenuC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsSelectionMenuC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveSelectionMenu2(mudt2.SetOpsSelectionMenuM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsSelectionMenuM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveSelectionMenu2(mudt2.SetOpsSelectionMenuC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsSelectionMenuC) : .Value += 1 : Application.DoEvents()
 
                 ''OPSグラフ設定
-                intRtn += mSaveOpsGraph(mudt.SetOpsGraphM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsGraphM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveOpsGraph(mudt.SetOpsGraphC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsGraphC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsGraph2(mudt2.SetOpsGraphM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsGraphM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsGraph2(mudt2.SetOpsGraphC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsGraphC) : .Value += 1 : Application.DoEvents()
 
                 ''フリーグラフ    2013.07.22 グラフとフリーグラフを分離  K.Fujimoto
-                intRtn += mSaveOpsFreeGraph(mudt.SetOpsFreeGraphM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsFreeGraphM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveOpsFreeGraph(mudt.SetOpsFreeGraphC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsFreeGraphC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsFreeGraph2(mudt2.SetOpsFreeGraphM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsFreeGraphM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsFreeGraph2(mudt2.SetOpsFreeGraphC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsFreeGraphC) : .Value += 1 : Application.DoEvents()
 
                 ''フリーディスプレイ
-                intRtn += mSaveOpsFreeDisplay(mudt.SetOpsFreeDisplayM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsFreeDisplayM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveOpsFreeDisplay(mudt.SetOpsFreeDisplayC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsFreeDisplayC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsFreeDisplay2(mudt2.SetOpsFreeDisplayM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsFreeDisplayM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsFreeDisplay2(mudt2.SetOpsFreeDisplayC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsFreeDisplayC) : .Value += 1 : Application.DoEvents()
 
                 ''トレンドグラフ
-                intRtn += mSaveOpsTrendGraph(mudt.SetOpsTrendGraphM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveOpsTrendGraph(mudt.SetOpsTrendGraphC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphC) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveOpsTrendGraph_PID(mudt.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphPID) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveOpsTrendGraph_PID(mudt.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphPID2) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsTrendGraph2(mudt2.SetOpsTrendGraphM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsTrendGraph2(mudt2.SetOpsTrendGraphC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsTrendGraph_PID2(mudt2.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphPID) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsTrendGraph_PID2(mudt2.SetOpsTrendGraphPID, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsTrendGraphPID2) : .Value += 1 : Application.DoEvents()
 
 
                 ''ログフォーマット
-                intRtn += mSaveOpsLogFormat(mudt.SetOpsLogFormatM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogFormatM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveOpsLogFormat(mudt.SetOpsLogFormatC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogFormatC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsLogFormat2(mudt2.SetOpsLogFormatM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsLogFormatM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsLogFormat2(mudt2.SetOpsLogFormatC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsLogFormatC) : .Value += 1 : Application.DoEvents()
 
                 ''ログフォーマットCHID ☆2012/10/26 K.Tanigawa
-                intRtn += mSaveOpsLogIdData(mudt.SetOpsLogIdDataM, mudtFileInfo, strPathBase2, True, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogIdDataM) : .Value += 1 : Application.DoEvents()
-                intRtn += mSaveOpsLogIdData(mudt.SetOpsLogIdDataC, mudtFileInfo, strPathBase2, False, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogIdDataC) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsLogIdData2(mudt2.SetOpsLogIdDataM, mudtFileInfo, strPathBase2, True, mudt2.SetEditorUpdateInfo.udtSave.bytOpsLogIdDataM) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsLogIdData2(mudt2.SetOpsLogIdDataC, mudtFileInfo, strPathBase2, False, mudt2.SetEditorUpdateInfo.udtSave.bytOpsLogIdDataC) : .Value += 1 : Application.DoEvents()
 
                 '' ﾛｸﾞｵﾌﾟｼｮﾝ設定　Ver1.9.3 2016.01.25 
-                intRtn += mSaveOpsLogOption(mudt.SetOpsLogOption, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytOpsLogOption) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsLogOption2(mudt2.SetOpsLogOption, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytOpsLogOption) : .Value += 1 : Application.DoEvents()
 
                 ''GWS設定CH設定書き込み 2014.02.04
-                intRtn += mSaveOpsGwsCh(mudt.SetOpsGwsCh, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytOpsGwsCh) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveOpsGwsCh2(mudt2.SetOpsGwsCh, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytOpsGwsCh) : .Value += 1 : Application.DoEvents()
 
                 ''CH変換テーブル（前VerのCH変換テーブルをVerInfoPrevフォルダに保存する）
-                intRtn += mSaveChConv(mudt.SetChConvPrev, mudtFileInfo, strPathVerInfoPrev2, mudt.SetEditorUpdateInfo.udtSave.bytChConvPrev, mudt.SetChInfo) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveChConv2(mudt2.SetChConvPrev, mudtFileInfo, strPathVerInfoPrev2, mudt2.SetEditorUpdateInfo.udtSave.bytChConvPrev, mudt.SetChInfo) : .Value += 1 : Application.DoEvents()
 
                 ''CH変換テーブル（現VerのCH変換テーブルをSaveフォルダに保存する）
-                intRtn += mSaveChConv(mudt.SetChConvNow, mudtFileInfo, strPathBase2, mudt.SetEditorUpdateInfo.udtSave.bytChConvNow, mudt.SetChInfo) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveChConv2(mudt2.SetChConvNow, mudtFileInfo, strPathBase2, mudt2.SetEditorUpdateInfo.udtSave.bytChConvNow, mudt.SetChInfo) : .Value += 1 : Application.DoEvents()
 
                 ''ファイル更新情報
-                intRtn += mSaveEditorUpdateInfo(mudt.SetEditorUpdateInfo, mudtFileInfo, strPathUpdateInfo2) : .Value += 1 : Application.DoEvents()
+                intRtn += mSaveEditorUpdateInfo2(mudt2.SetEditorUpdateInfo, mudtFileInfo, strPathUpdateInfo2) : .Value += 1 : Application.DoEvents()
 
                 '' Setup.iniﾌｧｲﾙ書き込み   Ver1.8.3  2015.11.26
                 SaveEditIni(strPathUpdateInfo2 & "\" & gCstIniFile)
@@ -2555,6 +2645,86 @@
 
     End Function
 
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のＦＵチャンネル情報保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) チャンネル情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveFuChannel2(ByVal udtSetFuChannel As gTypSetFu,
+                                    ByVal udtFileInfo As gTypFileInfo,
+                                    ByVal strPathBase As String,
+                                    ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathFuChannel
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileFuChannel, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileFuChannel)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetFuChannel.udtHeader, udtFileInfo.strFileVersion, gCstRecsFuChannel, gCstSizeFuChannel, , , , gCstFnumFuChannel)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetFuChannel)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
     '--------------------------------------------------------------------
     ' 機能      : ＦＵチャンネル情報読込
     ' 返り値    : 0:成功、<>0失敗
@@ -2759,6 +2929,86 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のチャンネル情報データ保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) チャンネル情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveChDisp2(ByVal udtSetFuChannel As gTypSetChDisp,
+                                 ByVal udtFileInfo As gTypFileInfo,
+                                 ByVal strPathBase As String,
+                                 ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChDisp
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileChDisp, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileChDisp)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetFuChannel.udtHeader, udtFileInfo.strFileVersion, gCstRecsChDisp, gCstSizeChDisp, , , , gCstFnumChDisp)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetFuChannel)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -2989,6 +3239,86 @@
 
     End Function
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のチャンネル情報保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) チャンネル情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveChannel2(ByVal udtSetChannel As gTypSetChInfo,
+                                  ByVal udtFileInfo As gTypFileInfo,
+                                  ByVal strPathBase As String,
+                                  ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChannel
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileChannel, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileChannel)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetChannel.udtHeader, udtFileInfo.strFileVersion, gGetRecCntChannel(udtSetChannel), gCstSizeChannel, , , , gCstFnumChannel)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetChannel)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
     '--------------------------------------------------------------------
     ' 機能      : チャンネル情報読込
     ' 返り値    : 0:成功、<>0失敗
@@ -3258,6 +3588,86 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目のコンポジット情報保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) コンポジット情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveComposite2(ByVal udtSetComposite As gTypSetChComposite,
+                                    ByVal udtFileInfo As gTypFileInfo,
+                                    ByVal strPathBase As String,
+                                    ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathComposite
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileComposite, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileComposite)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetComposite.udtHeader, udtFileInfo.strFileVersion, gGetRecCntComposite(udtSetComposite), gCstSizeComposite, , , , gCstFnumComposite)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetComposite)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
     ' 機能      : コンポジット情報読込
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) コンポジット情報構造体
@@ -3477,6 +3887,87 @@
 
     End Function
 
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のグループ設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) グループ設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveGroup2(ByVal udtSetGroup As gTypSetChGroupSet,
+                                ByVal udtFileInfo As gTypFileInfo,
+                                ByVal strPathBase As String,
+                                ByVal blnMachinery As Boolean,
+                                ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathGroup
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileGroupM, gCstFileGroupC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileGroupM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileGroupC)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetGroup.udtHeader, udtFileInfo.strFileVersion, gCstRecsGroup, gCstSizeGroup, , , , IIf(blnMachinery, gCstFnumGroupM, gCstFnumGroupC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetGroup)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
     '--------------------------------------------------------------------
     ' 機能      : グループ設定読込
     ' 返り値    : 0:成功、<>0失敗
@@ -3719,6 +4210,125 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のリポーズ入力設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) リポーズ入力設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : リポーズ入力設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveRepose2(ByVal udtSetGroupRepose As gTypSetChGroupRepose,
+                                 ByVal udtFileInfo As gTypFileInfo,
+                                 ByVal strPathBase As String,
+                                 ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathRepose
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileRepose, mblnReadCompile)
+            Dim udt48 As gTypSetChGroupRepose48 = Nothing ''2018.12.13 倉重 グループリポーズが48の場合に使用する配列
+            Dim intListRow As Integer = 0       ''2018.12.13 倉重 カウンタ変数
+            Dim intListDetailRow As Integer = 0 ''2018.12.13 倉重 カウンタ変数
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileRepose)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetGroupRepose.udtHeader, udtFileInfo.strFileVersion, gCstRecsRepose, gCstSizeRepose, , , , gCstFnumRepose)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                ''ADDのチェックボックスがチェックでない場合に格納する2018.12.13 倉重
+                If g_bytGREPNUM = 0 Then
+                    udt48.InitArray()
+                    For intListRow = LBound(udt48.udtRepose) To UBound(udt48.udtRepose)
+                        udt48.udtRepose(intListRow).InitArray()
+                    Next
+
+                    ''ヘッダの読み込み
+                    udt48.udtHeader.strVersion = udtSetGroupRepose.udtHeader.strVersion
+                    udt48.udtHeader.strDate = udtSetGroupRepose.udtHeader.strDate
+                    udt48.udtHeader.strTime = udtSetGroupRepose.udtHeader.strTime
+                    udt48.udtHeader.shtRecs = udtSetGroupRepose.udtHeader.shtRecs
+                    udt48.udtHeader.shtSize1 = udtSetGroupRepose.udtHeader.shtSize1
+                    udt48.udtHeader.shtSize2 = udtSetGroupRepose.udtHeader.shtSize2
+                    udt48.udtHeader.shtSize3 = udtSetGroupRepose.udtHeader.shtSize3
+                    udt48.udtHeader.shtSize4 = udtSetGroupRepose.udtHeader.shtSize4
+                    udt48.udtHeader.shtSize5 = udtSetGroupRepose.udtHeader.shtSize5
+
+                    ''リポーズデータの読み込み
+                    For intListRow = LBound(udt48.udtRepose) To UBound(udt48.udtRepose)
+                        ''CH ID
+                        udt48.udtRepose(intListRow).shtChId = udtSetGroupRepose.udtRepose(intListRow).shtChId
+                        ''データ種別コード
+                        udt48.udtRepose(intListRow).shtData = udtSetGroupRepose.udtRepose(intListRow).shtData
+
+                        For intListDetailRow = 0 To UBound(udt48.udtRepose(intListRow).udtReposeInf)
+                            ''CH ID
+                            udt48.udtRepose(intListRow).udtReposeInf(intListDetailRow).shtChId = udtSetGroupRepose.udtRepose(intListRow).udtReposeInf(intListDetailRow).shtChId
+                            ''マスク値
+                            udt48.udtRepose(intListRow).udtReposeInf(intListDetailRow).bytMask = udtSetGroupRepose.udtRepose(intListRow).udtReposeInf(intListDetailRow).bytMask
+                        Next
+                    Next
+                    FilePut(intFileNo, udt48)
+                Else
+                    FilePut(intFileNo, udtSetGroupRepose)
+                End If
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -4014,6 +4624,86 @@
 
     End Function
 
+
+    '--------------------------------------------------------------------
+    ' 機能      : 出力チャンネル設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) 出力チャンネル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 出力チャンネル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOutPut2(ByVal udtSetCHOutPut As gTypSetChOutput,
+                                 ByVal udtFileInfo As gTypFileInfo,
+                                 ByVal strPathBase As String,
+                                 ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOutPut
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileOutPut, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOutPut)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetCHOutPut.udtHeader, udtFileInfo.strFileVersion, gCstRecsOutPut, gCstSizeOutPut, , , , gCstFnumOutPut)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetCHOutPut)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
     '--------------------------------------------------------------------
     ' 機能      : 出力チャンネル設定読込
     ' 返り値    : 0:成功、<>0失敗
@@ -4159,9 +4849,9 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : 論理出力設定保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveOrAnd(ByVal udtSetCHAndOr As gTypSetChAndOr, _
-                                ByVal udtFileInfo As gTypFileInfo, _
-                                ByVal strPathBase As String, _
+    Private Function mSaveOrAnd(ByVal udtSetCHAndOr As gTypSetChAndOr,
+                                ByVal udtFileInfo As gTypFileInfo,
+                                ByVal strPathBase As String,
                                 ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -4219,6 +4909,88 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目の論理出力設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) 論理出力設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 論理出力設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOrAnd2(ByVal udtSetCHAndOr As gTypSetChAndOr,
+                                ByVal udtFileInfo As gTypFileInfo,
+                                ByVal strPathBase As String,
+                                ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOrAnd
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileOrAnd, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOrAnd)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetCHAndOr.udtHeader, udtFileInfo.strFileVersion, gCstRecsOrAnd, gCstSizeOrAnd, , , , gCstFnumOrAnd)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetCHAndOr)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -4450,6 +5222,86 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目の積算データ設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) 積算データ設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 積算データ設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveChRunHour2(ByVal udtSetChRunHour As gTypSetChRunHour,
+                                    ByVal udtFileInfo As gTypFileInfo,
+                                    ByVal strPathBase As String,
+                                    ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChAdd
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileChAdd, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileChAdd)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetChRunHour.udtHeader, udtFileInfo.strFileVersion, gCstRecsChAdd, gCstSizeChAdd, , , , gCstFnumChAdd)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetChRunHour)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+    '--------------------------------------------------------------------
     ' 機能      :積算データ設定読込
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) 積算データ設定構造体
@@ -4593,9 +5445,9 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : 排ガス処理演算設定保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveExhGus(ByVal udtSetExhGus As gTypSetChExhGus, _
-                                 ByVal udtFileInfo As gTypFileInfo, _
-                                 ByVal strPathBase As String, _
+    Private Function mSaveExhGus(ByVal udtSetExhGus As gTypSetChExhGus,
+                                 ByVal udtFileInfo As gTypFileInfo,
+                                 ByVal strPathBase As String,
                                  ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -4653,6 +5505,88 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目の排ガス処理演算設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) 排ガス処理演算設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 排ガス処理演算設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveExhGus2(ByVal udtSetExhGus As gTypSetChExhGus,
+                                 ByVal udtFileInfo As gTypFileInfo,
+                                 ByVal strPathBase As String,
+                                 ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathExhGus
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileExhGus, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileExhGus)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetExhGus.udtHeader, udtFileInfo.strFileVersion, gCstRecsExhGus, gCstSizeExhGus, , , , gCstFnumExhGus)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetExhGus)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -4871,6 +5805,89 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のコントロール使用可／不可設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) コントロール使用可／不可設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : コントロール使用可／不可設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveCtrlUseNotuse2(ByVal udtSetTimer As gTypSetChCtrlUse,
+                                        ByVal udtFileInfo As gTypFileInfo,
+                                        ByVal strPathBase As String,
+                                        ByVal blnMachinery As Boolean,
+                                        ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathCtrlUseNouse
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileCtrlUseNouseM, gCstFileCtrlUseNouseC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileCtrlUseNouseM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileCtrlUseNouseC)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetTimer.udtHeader, udtFileInfo.strFileVersion, gCstRecsCtrlUseNouse, gCstSizeCtrlUseNouse, , , , IIf(blnMachinery, gCstFnumCtrlUseNouseM, gCstFnumCtrlUseNouseC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetTimer)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -5170,6 +6187,88 @@
 
     End Function
 
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のSIO設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) SIO設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : SIO設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveChSio2(ByVal udtSetSio As gTypSetChSio,
+                                ByVal udtFileInfo As gTypFileInfo,
+                                ByVal strPathBase As String,
+                                ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChSio
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileChSio, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileChSio)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetSio.udtHeader, udtFileInfo.strFileVersion, gCstRecsChSio, gCstSizeChSio1, gCstSizeChSio2, , , gCstFnumChSio)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetSio)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
     '--------------------------------------------------------------------
     ' 機能      : SIO設定読込
     ' 返り値    : 0:成功、<>0失敗
@@ -5314,10 +6413,10 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : SIO設定保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveChSioCh(ByVal udtSetSioCh As gTypSetChSioCh, _
-                                  ByVal udtFileInfo As gTypFileInfo, _
-                                  ByVal strPathBase As String, _
-                                  ByVal intPortNo As Integer, _
+    Private Function mSaveChSioCh(ByVal udtSetSioCh As gTypSetChSioCh,
+                                  ByVal udtFileInfo As gTypFileInfo,
+                                  ByVal strPathBase As String,
+                                  ByVal intPortNo As Integer,
                                   ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -5374,6 +6473,86 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のSIO設定CH設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) SIO設定CH設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : SIO設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveChSioCh2(ByVal udtSetSioCh As gTypSetChSioCh,
+                                  ByVal udtFileInfo As gTypFileInfo,
+                                  ByVal strPathBase As String,
+                                  ByVal intPortNo As Integer,
+                                  ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChSioCh
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileChSioChName, mblnReadCompile) & Format(intPortNo, "00") & gCstFileChSioChExt
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileChSioChName & Format(intPortNo, "00") & gCstFileChSioChExt)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetSioCh.udtHeader, udtFileInfo.strFileVersion, gCstRecsChSioCh, gCstSizeChSioCh, , , , gCstFnumChSioChStart + (intPortNo - 1))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetSioCh)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -5613,6 +6792,94 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目のSIO設定拡張設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) SIO設定拡張設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : SIO設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveChSioExt2(ByVal udtSetSioExt As gTypSetChSioExt,
+                                  ByVal udtFileInfo As gTypFileInfo,
+                                  ByVal strPathBase As String,
+                                  ByVal intPortNo As Integer,
+                                  ByRef bytOutputFlg As Byte,
+                                  ByVal pintKakuTbl As Integer) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChSioExt
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileChSioExtName, mblnReadCompile) & Format(intPortNo, "00") & gCstFileChSioExtExt
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileChSioExtName & Format(intPortNo, "00") & gCstFileChSioExtExt)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) And pintKakuTbl = 1 Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成しない
+            'Call gMakeHeader(udtSetSioCh.udtHeader, udtFileInfo.strFileVersion, gCstRecsChSioCh, gCstSizeChSioCh, , , , gCstFnumChSioChStart + (intPortNo - 1))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            '拡張しないならそのまま処理抜け
+            If pintKakuTbl <> 1 Then
+                Return 0
+            End If
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetSioExt)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
     ' 機能      : SIO設定拡張設定読込
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) SIO設定拡張設定構造体
@@ -5753,9 +7020,9 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : 延長警報設定保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveExtAlarm(ByVal udtSetExAlm As gTypSetExtAlarm, _
-                                   ByVal udtFileInfo As gTypFileInfo, _
-                                   ByVal strPathBase As String, _
+    Private Function mSaveExtAlarm(ByVal udtSetExAlm As gTypSetExtAlarm,
+                                   ByVal udtFileInfo As gTypFileInfo,
+                                   ByVal strPathBase As String,
                                    ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -5813,6 +7080,87 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目の延長警報設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) 延長警報設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 延長警報設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveExtAlarm2(ByVal udtSetExAlm As gTypSetExtAlarm,
+                                   ByVal udtFileInfo As gTypFileInfo,
+                                   ByVal strPathBase As String,
+                                   ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathExtAlarm
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileExtAlarm, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileExtAlarm)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetExAlm.udtHeader, udtFileInfo.strFileVersion, gCstRecsExtAlarm, gCstSizeExtAlarm1, gCstSizeExtAlarm2, , , gCstFnumExtAlarm)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetExAlm)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -6043,6 +7391,86 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目のタイマ設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) タイマ設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : タイマ設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveTimer2(ByVal udtSetTimer As gTypSetExtTimerSet,
+                                ByVal udtFileInfo As gTypFileInfo,
+                                ByVal strPathBase As String,
+                                ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathTimer
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileTimer, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileTimer)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetTimer.udtHeader, udtFileInfo.strFileVersion, gCstRecsTimer, gCstSizeTimer, , , , gCstFnumTimer)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetTimer)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
     ' 機能      : タイマ設定読込
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) タイマ設定構造体
@@ -6245,6 +7673,87 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のタイマ表示名称設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) タイマ表示名称設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : タイマ表示名称設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveTimerName2(ByVal udtSetTimerName As gTypSetExtTimerName,
+                                    ByVal udtFileInfo As gTypFileInfo,
+                                    ByVal strPathBase As String,
+                                    ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathTimerName
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileTimerName, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileTimerName)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetTimerName.udtHeader, udtFileInfo.strFileVersion, gCstRecsTimerName, gCstSizeTimerName, , , , gCstFnumTimerName)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetTimerName)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -6474,6 +7983,85 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目のシーケンスID保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) シーケンスID構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : シーケンスID保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveSeqSequenceID2(ByVal udtSetSeqSequenceID As gTypSetSeqID,
+                                        ByVal udtFileInfo As gTypFileInfo,
+                                        ByVal strPathBase As String,
+                                        ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSeqSequenceID
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileSeqSequenceID, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileSeqSequenceID)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetSeqSequenceID.udtHeader, udtFileInfo.strFileVersion, gCstRecsSeqSequenceID, gCstSizeSeqSequenceID, , , , gCstFnumSeqSequenceID)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetSeqSequenceID)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+    '--------------------------------------------------------------------
     ' 機能      : シーケンスID読込
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) シーケンスID構造体
@@ -6689,6 +8277,86 @@
 
     End Function
 
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のシーケンス設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) シーケンス設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : シーケンス設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveSeqSequenceSet2(ByVal udtSetSeqSequenceSet As gTypSetSeqSet,
+                                         ByVal udtFileInfo As gTypFileInfo,
+                                         ByVal strPathBase As String,
+                                         ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSeqSequenceSet
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileSeqSequenceSet, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileSeqSequenceSet)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetSeqSequenceSet.udtHeader, udtFileInfo.strFileVersion, gCstRecsSeqSequenceSet, gCstSizeSeqSequenceSet, , , , gCstFnumSeqSequenceSet)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetSeqSequenceSet)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
     '--------------------------------------------------------------------
     ' 機能      : シーケンス設定読込
     ' 返り値    : 0:成功、<>0失敗
@@ -6894,6 +8562,87 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のリニアライズテーブル設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) リニアライズテーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : リニアライズテーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveSeqLinear2(ByVal udtSetSeqLinear As gTypSetSeqLinear,
+                                    ByVal udtFileInfo As gTypFileInfo,
+                                    ByVal strPathBase As String,
+                                    ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSeqLinear
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileSeqLinear, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileSeqLinear)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetSeqLinear.udtHeader, udtFileInfo.strFileVersion, gCstRecsSeqLinear, gCstSizeSeqLinear1, gCstSizeSeqLinear2, , , gCstFnumSeqLinear)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetSeqLinear)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -7124,6 +8873,85 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目の演算式テーブル設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) 演算式テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : 演算式テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveSeqOperationExpression2(ByVal udtSetSeqOpeExp As gTypSetSeqOperationExpression,
+                                                 ByVal udtFileInfo As gTypFileInfo,
+                                                 ByVal strPathBase As String,
+                                                 ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathSeqOperationExpression
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileSeqOperationExpression, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileSeqOperationExpression)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetSeqOpeExp.udtHeader, udtFileInfo.strFileVersion, gCstRecsSeqOperationExpression, gCstSizeSeqOperationExpression, , , , gCstFnumSeqOperationExpression)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetSeqOpeExp)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+    '--------------------------------------------------------------------
     ' 機能      : 演算式テーブル設定読込
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) 演算式テーブル設定構造体
@@ -7267,9 +9095,9 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : データ保存テーブル設定保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveChDataSaveTable(ByVal udtSetChDataTable As gTypSetChDataSave, _
-                                          ByVal udtFileInfo As gTypFileInfo, _
-                                          ByVal strPathBase As String, _
+    Private Function mSaveChDataSaveTable(ByVal udtSetChDataTable As gTypSetChDataSave,
+                                          ByVal udtFileInfo As gTypFileInfo,
+                                          ByVal strPathBase As String,
                                           ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -7326,6 +9154,86 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のデータ保存テーブル設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) データ保存テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : データ保存テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveChDataSaveTable2(ByVal udtSetChDataTable As gTypSetChDataSave,
+                                          ByVal udtFileInfo As gTypFileInfo,
+                                          ByVal strPathBase As String,
+                                          ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChDataSaveTable
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileChDataSaveTable, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileChDataSaveTable)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetChDataTable.udtHeader, udtFileInfo.strFileVersion, gCstRecsChDataSaveTable, gCstSizeChDataSaveTable, , , , gCstFnumChDataSaveTable)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetChDataTable)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -7556,6 +9464,85 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目のデータ転送テーブル設定
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) データ転送テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : データ転送テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveChDataForwardTableSet2(ByVal udtSetChDataForwardTableSet As gTypSetChDataForward,
+                                                ByVal udtFileInfo As gTypFileInfo,
+                                                ByVal strPathBase As String,
+                                                ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChDataForwardTableSet
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileChDataForwardTableSet, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileChDataForwardTableSet)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetChDataForwardTableSet.udtHeader, udtFileInfo.strFileVersion, gCstRecsChDataForwardTableSet, gCstSizeChDataForwardTableSet, , , , gCstFnumChDataForwardTableSet)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetChDataForwardTableSet)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+    '--------------------------------------------------------------------
     ' 機能      : データ転送テーブル設定読込
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) データ転送テーブル設定構造体
@@ -7779,6 +9766,92 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目のOPSスクリーンタイトル保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) OPSスクリーンタイトル構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : システム設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOpsScreenTitle2(ByVal udtSetOpsScreenTitle As gTypSetOpsScreenTitle,
+                                         ByVal udtFileInfo As gTypFileInfo,
+                                         ByVal strPathBase As String,
+                                         ByVal blnMchine As Boolean,
+                                         ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsScreenTitle
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMchine, gCstFileOpsScreenTitleM, gCstFileOpsScreenTitleC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsScreenTitleM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsScreenTitleC)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                'If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath & "] not output. because it is not updated.")
+                'Return 0
+            End If
+
+            'Ver2.0.7.B ScreenTitleは強制変更
+            Call gInitSetOpsDisp(udtSetOpsScreenTitle)
+
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetOpsScreenTitle.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsScreenTitle, gCstSizeOpsScreenTitle, , , , IIf(blnMchine, gCstFnumOpsScreenTitleM, gCstFnumOpsScreenTitleC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetOpsScreenTitle)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+    '--------------------------------------------------------------------
     ' 機能      : OPSスクリーンタイトル読込
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) OPSスクリーンタイトル構造体
@@ -7999,6 +10072,89 @@
 
     End Function
 
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のプルダウンメニュー
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) データ転送テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : データ転送テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveManuMain2(ByVal udtManuMain As gTypSetOpsPulldownMenu,
+                                   ByVal udtFileInfo As gTypFileInfo,
+                                   ByVal strPathBase As String,
+                                   ByVal blnMachinery As Boolean,
+                                   ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsPulldownMenu
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileOpsPulldownMenuM, gCstFileOpsPulldownMenuC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsPulldownMenuM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsPulldownMenuC)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtManuMain.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsPulldownMenu, gCstSizeOpsPulldownMenu, , , , IIf(blnMachinery, gCstFnumOpsPulldownMenuM, gCstFnumOpsPulldownMenuC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtManuMain)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
     '--------------------------------------------------------------------
     ' 機能      : データ転送テーブル設定読込
     ' 返り値    : 0:成功、<>0失敗
@@ -8206,6 +10362,88 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のセレクションメニュー
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) データ転送テーブル設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : データ転送テーブル設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveSelectionMenu2(ByVal udtSelectionMenu As gTypSetOpsSelectionMenu,
+                                        ByVal udtFileInfo As gTypFileInfo,
+                                        ByVal strPathBase As String,
+                                        ByVal blnMachinery As Boolean,
+                                        ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsSelectionMenu
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileOpsSelectionMenuM, gCstFileOpsSelectionMenuC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsSelectionMenuM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsSelectionMenuC)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSelectionMenu.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsSelectionMenu, gCstSizeOpsSelectionMenu, , , , IIf(blnMachinery, gCstFnumOpsSelectionMenuM, gCstFnumOpsSelectionMenuC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSelectionMenu)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -8441,6 +10679,88 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目のOPSグラフ設定書込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) OPSグラフ設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : OPSグラフ設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOpsGraph2(ByVal udtOpsGraph As gTypSetOpsGraph,
+                                   ByVal udtFileInfo As gTypFileInfo,
+                                   ByVal strPathBase As String,
+                                   ByVal blnMachinery As Boolean,
+                                   ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsGraph
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileOpsGraphM, gCstFileOpsGraphC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsGraphM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsGraphC)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtOpsGraph.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsGraph, , , , , IIf(blnMachinery, gCstFnumOpsGraphM, gCstFnumOpsGraphC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtOpsGraph)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+    '--------------------------------------------------------------------
     ' 機能      : OPSグラフ設定読込
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) OPSグラフ設定構造体
@@ -8587,10 +10907,10 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : フリーグラフ保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveOpsFreeGraph(ByVal udtFreeGraph As gTypSetOpsFreeGraph, _
-                                         ByVal udtFileInfo As gTypFileInfo, _
-                                         ByVal strPathBase As String, _
-                                         ByVal blnMachinery As Boolean, _
+    Private Function mSaveOpsFreeGraph(ByVal udtFreeGraph As gTypSetOpsFreeGraph,
+                                         ByVal udtFileInfo As gTypFileInfo,
+                                         ByVal strPathBase As String,
+                                         ByVal blnMachinery As Boolean,
                                          ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -8661,6 +10981,90 @@
         End Try
 
     End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のフリーグラフ書込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) フリーグラフ構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : フリーグラフ保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOpsFreeGraph2(ByVal udtFreeGraph As gTypSetOpsFreeGraph,
+                                         ByVal udtFileInfo As gTypFileInfo,
+                                         ByVal strPathBase As String,
+                                         ByVal blnMachinery As Boolean,
+                                         ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsFreeGraph
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileOpsFreeGraphM, gCstFileOpsFreeGraphC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsFreeGraphM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsFreeGraphC)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtFreeGraph.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsFreeGraph, gCstSizeOpsFreeGraph, , , , IIf(blnMachinery, gCstFnumOpsFreeGraphM, gCstFnumOpsFreeGraphC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtFreeGraph)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
 
 #End Region
 
@@ -8736,6 +11140,90 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のフリーディスプレイ書込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) フリーディスプレイ構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : フリーディスプレイ保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOpsFreeDisplay2(ByVal udtFreeDisplay As gTypSetOpsFreeDisplay,
+                                         ByVal udtFileInfo As gTypFileInfo,
+                                         ByVal strPathBase As String,
+                                         ByVal blnMachinery As Boolean,
+                                         ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsFreeDisplay
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileOpsFreeDisplayM, gCstFileOpsFreeDisplayC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsFreeDisplayM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsFreeDisplayC)
+
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtFreeDisplay.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsFreeDisplay, gCstSizeOpsFreeDisplay, , , , IIf(blnMachinery, gCstFnumOpsFreeDisplayM, gCstFnumOpsFreeDisplayC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtFreeDisplay)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -8828,10 +11316,10 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : トレンドグラフ保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveOpsTrendGraph(ByVal udtManuMain As gTypSetOpsTrendGraph, _
-                                        ByVal udtFileInfo As gTypFileInfo, _
-                                        ByVal strPathBase As String, _
-                                        ByVal blnMachinery As Boolean, _
+    Private Function mSaveOpsTrendGraph(ByVal udtManuMain As gTypSetOpsTrendGraph,
+                                        ByVal udtFileInfo As gTypFileInfo,
+                                        ByVal strPathBase As String,
+                                        ByVal blnMachinery As Boolean,
                                         ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -8901,12 +11389,93 @@
         End Try
 
     End Function
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のトレンドグラフ書込
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) トレンドグラフ構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : トレンドグラフ保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOpsTrendGraph2(ByVal udtManuMain As gTypSetOpsTrendGraph,
+                                        ByVal udtFileInfo As gTypFileInfo,
+                                        ByVal strPathBase As String,
+                                        ByVal blnMachinery As Boolean,
+                                        ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsTrendGraph
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileOpsTrendGraphM, gCstFileOpsTrendGraphC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsTrendGraphM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsTrendGraphC)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtManuMain.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsTrendGraph, gCstSizeOpsTrendGraph, , , , IIf(blnMachinery, gCstFnumOpsTrendGraphM, gCstFnumOpsTrendGraphC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtManuMain)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
 
     'PID専用ﾄﾚﾝﾄﾞｸﾞﾗﾌ
-    Private Function mSaveOpsTrendGraph_PID(ByVal udtManuMain As gTypSetOpsTrendGraph, _
-                                        ByVal udtFileInfo As gTypFileInfo, _
-                                        ByVal strPathBase As String, _
-                                        ByVal blnMachinery As Boolean, _
+    Private Function mSaveOpsTrendGraph_PID(ByVal udtManuMain As gTypSetOpsTrendGraph,
+                                        ByVal udtFileInfo As gTypFileInfo,
+                                        ByVal strPathBase As String,
+                                        ByVal blnMachinery As Boolean,
                                         ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -8974,6 +11543,91 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '2つ目のPID専用ﾄﾚﾝﾄﾞｸﾞﾗﾌ
+    Private Function mSaveOpsTrendGraph_PID2(ByVal udtManuMain As gTypSetOpsTrendGraph,
+                                        ByVal udtFileInfo As gTypFileInfo,
+                                        ByVal strPathBase As String,
+                                        ByVal blnMachinery As Boolean,
+                                        ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsTrendGraph
+            Dim strCurFileName2 As String = ""
+            If blnMachinery = True Then
+                strCurFileName2 = mGetOutputFileName(udtFileInfo, gCstFileOpsTrendGraphPID, mblnReadCompile)
+            Else
+                strCurFileName2 = mGetOutputFileName(udtFileInfo, gCstFileOpsTrendGraphPID2, mblnReadCompile)
+            End If
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsTrendGraphPID)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsTrendGraphPID2)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            If blnMachinery = True Then
+                Call gMakeHeader(udtManuMain.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsTrendGraph, gCstSizeOpsTrendGraph, , , , gCstFnumOpsTrendGraphPID)
+            Else
+                Call gMakeHeader(udtManuMain.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsTrendGraph, gCstSizeOpsTrendGraph, , , , gCstFnumOpsTrendGraphPID2)
+            End If
+
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtManuMain)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -9211,10 +11865,10 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : ログフォーマット保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveOpsLogFormat(ByVal udtSetOpsLogFormat As gTypSetOpsLogFormat, _
-                                       ByVal udtFileInfo As gTypFileInfo, _
-                                       ByVal strPathBase As String, _
-                                       ByVal blnMachinery As Boolean, _
+    Private Function mSaveOpsLogFormat(ByVal udtSetOpsLogFormat As gTypSetOpsLogFormat,
+                                       ByVal udtFileInfo As gTypFileInfo,
+                                       ByVal strPathBase As String,
+                                       ByVal blnMachinery As Boolean,
                                        ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -9272,6 +11926,88 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のログフォーマット保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) ログフォーマット構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : ログフォーマット保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOpsLogFormat2(ByVal udtSetOpsLogFormat As gTypSetOpsLogFormat,
+                                       ByVal udtFileInfo As gTypFileInfo,
+                                       ByVal strPathBase As String,
+                                       ByVal blnMachinery As Boolean,
+                                       ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsLogFormat
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileOpsLogFormatM, gCstFileOpsLogFormatC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsLogFormatM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsLogFormatC)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetOpsLogFormat.udtHeader, udtFileInfo.strFileVersion, gCstSizeOpsLogFormat, gCstRecsOpsLogFormat, , , , IIf(blnMachinery, gCstFnumOpsLogFormatM, gCstFnumOpsLogFormatC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetOpsLogFormat)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -9432,10 +12168,10 @@
     ' 機能説明  : ログフォーマット保存処理を行う
     ' ☆2012/10/26 K.Tanigawa
     '--------------------------------------------------------------------
-    Private Function mSaveOpsLogIdData(ByVal udtSetOpsLogIdData As gTypSetOpsLogIdData, _
-                                       ByVal udtFileInfo As gTypFileInfo, _
-                                       ByVal strPathBase As String, _
-                                       ByVal blnMachinery As Boolean, _
+    Private Function mSaveOpsLogIdData(ByVal udtSetOpsLogIdData As gTypSetOpsLogIdData,
+                                       ByVal udtFileInfo As gTypFileInfo,
+                                       ByVal strPathBase As String,
+                                       ByVal blnMachinery As Boolean,
                                        ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -9493,6 +12229,89 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のログフォーマットCHID保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) ログフォーマット構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : ログフォーマット保存処理を行う
+    ' ☆2012/10/26 K.Tanigawa
+    '--------------------------------------------------------------------
+    Private Function mSaveOpsLogIdData2(ByVal udtSetOpsLogIdData As gTypSetOpsLogIdData,
+                                       ByVal udtFileInfo As gTypFileInfo,
+                                       ByVal strPathBase As String,
+                                       ByVal blnMachinery As Boolean,
+                                       ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsLogIdData
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, IIf(blnMachinery, gCstFileOpsLogIdDataM, gCstFileOpsLogIdDataC), mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsLogIdDataM)
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsLogIdDataC)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetOpsLogIdData.udtheader, udtFileInfo.strFileVersion, gCstRecsOpsLogIdData, gCstSizeOpsLogIdData, , , , IIf(blnMachinery, gCstFnumOpsLogIdDataM, gCstFnumOpsLogIdDataC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetOpsLogIdData)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -9658,9 +12477,9 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : ログフォーマット保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveOpsLogOption(ByVal udtSetOpsLogOption As gTypLogOption, _
-                                       ByVal udtFileInfo As gTypFileInfo, _
-                                       ByVal strPathBase As String, _
+    Private Function mSaveOpsLogOption(ByVal udtSetOpsLogOption As gTypLogOption,
+                                       ByVal udtFileInfo As gTypFileInfo,
+                                       ByVal strPathBase As String,
                                        ByRef bytOutputFlg As Byte) As Integer
 
         Try
@@ -9717,6 +12536,86 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のログフォーマット保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) ログフォーマット構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : ログフォーマット保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOpsLogOption2(ByVal udtSetOpsLogOption As gTypLogOption,
+                                       ByVal udtFileInfo As gTypFileInfo,
+                                       ByVal strPathBase As String,
+                                       ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsLogFormat
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileOpsLogOption, mblnReadCompile)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsLogOption)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            ''Call gMakeHeader(udtSetOpsLogOption.udtHeader, udtFileInfo.strFileVersion, gCstSizeOpsLogFormat, gCstRecsOpsLogFormat, , , , IIf(blnMachinery, gCstFnumOpsLogFormatM, gCstFnumOpsLogFormatC))
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetOpsLogOption)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -9941,6 +12840,86 @@
     End Function
 
     '--------------------------------------------------------------------
+    ' 機能      : 2つ目のGWS設定CH設定保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) SIO設定CH設定構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : SIO設定保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveOpsGwsCh2(ByVal udtSetGwsCh As gTypSetOpsGwsCh,
+                                  ByVal udtFileInfo As gTypFileInfo,
+                                  ByVal strPathBase As String,
+                                  ByRef bytOutputFlg As Byte) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathOpsGwsCh
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileOpsGwsChName, mblnReadCompile) & gCstFileOpsGwsChExt
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            'Ver2.0.7.B 無関係なファイルを削除する
+            Call subDelNoShipFile(udtFileInfo, strPathSave, gCstFileOpsGwsChName & gCstFileOpsGwsChExt)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetGwsCh.udtHeader, udtFileInfo.strFileVersion, gCstRecsOpsGwsCh, gCstSizeOpsGwsCh, , , , gCstFnumOpsGwsChStart)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetGwsCh)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
     ' 機能      : GWS設定読込     2014.02.04
     ' 返り値    : 0:成功、<>0失敗
     ' 引き数    : ARG1 - ( O) SIO設定構造体
@@ -10085,9 +13064,9 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : CH変換テーブル保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveChConv(ByVal udtSetChConv As gTypSetChConv, _
-                                 ByVal udtFileInfo As gTypFileInfo, _
-                                 ByVal strPathBase As String, _
+    Private Function mSaveChConv(ByVal udtSetChConv As gTypSetChConv,
+                                 ByVal udtFileInfo As gTypFileInfo,
+                                 ByVal strPathBase As String,
                                  ByRef bytOutputFlg As Byte,
                                  ByRef udtSetChannel As gTypSetChInfo) As Integer
 
@@ -10142,6 +13121,84 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のCH変換テーブル保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) CH変換テーブル構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : CH変換テーブル保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveChConv2(ByVal udtSetChConv As gTypSetChConv,
+                                 ByVal udtFileInfo As gTypFileInfo,
+                                 ByVal strPathBase As String,
+                                 ByRef bytOutputFlg As Byte,
+                                 ByRef udtSetChannel As gTypSetChInfo) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathChConv
+            Dim strCurFileName2 As String = mGetOutputFileName(udtFileInfo, gCstFileChConv, True)
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''更新されてなく、ファイルが存在する場合
+            If bytOutputFlg = 0 And System.IO.File.Exists(strFullPath2) Then
+                If gCstOutputFileMsgDisplay Then Call mAddMsgList("Save cancel.   [" & strFullPath2 & "] not output. because it is not updated.")
+                Return 0
+            End If
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetChConv.udtHeader, udtFileInfo.strFileVersion, gCstRecsChConv, gCstSizeChConv, gGetChConvPacketSize(udtSetChannel), , , gCstFnumChConv)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetChConv)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+                ''出力フラグを 0 にする
+                bytOutputFlg = 0
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
@@ -10299,8 +13356,8 @@
     ' 　　　    : ARG3 - (I ) ベースパス
     ' 機能説明  : ファイル更新情報保存処理を行う
     '--------------------------------------------------------------------
-    Private Function mSaveEditorUpdateInfo(ByVal udtSetChDataTable As gTypSetEditorUpdateInfo, _
-                                           ByVal udtFileInfo As gTypFileInfo, _
+    Private Function mSaveEditorUpdateInfo(ByVal udtSetChDataTable As gTypSetEditorUpdateInfo,
+                                           ByVal udtFileInfo As gTypFileInfo,
                                            ByVal strPathBase As String) As Integer
 
         Try
@@ -10345,6 +13402,73 @@
 
             Catch ex As Exception
                 Call mAddMsgList("Save Error!! [" & strFullPath & "] " & ex.Message & "")
+                intRtn = -1
+            Finally
+                FileClose(intFileNo)
+            End Try
+
+            Return intRtn
+
+        Catch ex As Exception
+            Call gOutputErrorLog(gMakeExceptionInfo(System.Reflection.MethodBase.GetCurrentMethod, ex.Message))
+        End Try
+
+    End Function
+
+    '--------------------------------------------------------------------
+    ' 機能      : 2つ目のファイル更新情報保存
+    ' 返り値    : 0:成功、<>0失敗
+    ' 引き数    : ARG1 - (I ) ファイル更新情報構造体
+    ' 　　　    : ARG2 - (I ) ファイル情報構造体
+    ' 　　　    : ARG3 - (I ) ベースパス
+    ' 機能説明  : ファイル更新情報保存処理を行う
+    '--------------------------------------------------------------------
+    Private Function mSaveEditorUpdateInfo2(ByVal udtSetChDataTable As gTypSetEditorUpdateInfo,
+                                           ByVal udtFileInfo As gTypFileInfo,
+                                           ByVal strPathBase As String) As Integer
+
+        Try
+
+            Dim intRtn As Integer = 0
+            Dim intFileNo As Integer
+            Dim strPathSave As String
+            Dim strFullPath2 As String
+            Dim strCurPathName2 As String = gCstPathEditorUpdateInfo
+            Dim strCurFileName2 As String = gCstFileEditorUpdateInfo
+
+            ''メッセージ更新
+            lblMessage.Text = "saving " & strCurFileName2 : Call lblMessage.Refresh()
+
+            ''保存パスを作成
+            strPathSave = System.IO.Path.Combine(strPathBase, strCurPathName2)
+            strFullPath2 = System.IO.Path.Combine(strPathSave, strCurFileName2)
+
+            ''フォルダ作成
+            If gMakeFolder(strPathSave) <> 0 Then
+                Call mAddMsgList("Output failed. [" & strFullPath2 & "]")
+                Call mAddMsgList("It failed in making the folder. [Path]" & strPathBase)
+                Return -1
+            End If
+
+            ''ヘッダレコード作成
+            Call gMakeHeader(udtSetChDataTable.udtHeader, udtFileInfo.strFileVersion, gCstRecsEditorUpdateInfo, gCstSizeEditorUpdateInfo, , , , gCstFnumEditorUpdateInfo)
+
+            ''ファイルが存在する場合を消す
+            If System.IO.File.Exists(strFullPath2) Then Call My.Computer.FileSystem.DeleteFile(strFullPath2)
+
+            ''ファイルオープン
+            intFileNo = FreeFile()
+            FileOpen(intFileNo, strFullPath2, OpenMode.Binary, OpenAccess.Write, OpenShare.Shared)
+
+            Try
+                ''ファイル書き込み
+                FilePut(intFileNo, udtSetChDataTable)
+
+                ''メッセージ出力
+                Call mAddMsgList("Save complete. [" & strFullPath2 & "]")
+
+            Catch ex As Exception
+                Call mAddMsgList("Save Error!! [" & strFullPath2 & "] " & ex.Message & "")
                 intRtn = -1
             Finally
                 FileClose(intFileNo)
